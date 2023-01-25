@@ -1,4 +1,4 @@
 # Junkyard - headless Python Django CMS
 - Multi lingual
-- multi tenant
+- Multi tenant
 - API first
