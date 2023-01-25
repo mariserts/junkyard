@@ -1,2 +1,4 @@
-# Junkyard - headless CMS
-Multi lingual, multi tenant API first CMS in Django
+# Junkyard - headless Python Django CMS
+- Multi lingual
+- multi tenant
+- API first
