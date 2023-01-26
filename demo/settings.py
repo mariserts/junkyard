@@ -44,6 +44,8 @@ INSTALLED_APPS = [
     #
     'junkyard_api',
     'junkyard_api_flat_page',
+    #
+    'debug_toolbar',
 ]
 
 MIDDLEWARE = [
@@ -54,6 +56,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    #
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
 ]
 
 ROOT_URLCONF = 'demo.urls'
@@ -131,6 +135,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 #
+
+INTERNAL_IPS = [
+    '127.0.0.1',
+]
+
 
 AUTH_USER_MODEL = 'junkyard_api.User'
 

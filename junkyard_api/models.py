@@ -25,6 +25,9 @@ class User(AbstractUser):
 
         super(User, self).save(*args, **kwargs)
 
+    def __str__(self):
+        return self.email
+
 
 class Tenant(models.Model):
 
@@ -42,6 +45,44 @@ class Tenant(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+
+        default = f'ID: {self.id}'
+        translatable_content = self.translatable_content
+
+        if len(translatable_content) > 0:
+            return translatable_content[0].get('title', default)
+
+        return default
+
+
+class TenantAdmin(models.Model):
+
+    class Meta:
+        unique_together = (
+            'tenant',
+            'user'
+        )
+
+    tenant = models.ForeignKey(
+        Tenant,
+        on_delete=models.CASCADE,
+        related_name='admins',
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='tenants_to_admin',
+    )
+    acl = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+    )
+
+    def __str__(self):
+        return f'User: {self.user} Tenant: {self.tenant}'
 
 
 class Item(models.Model):
@@ -72,3 +113,13 @@ class Item(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+
+        default = f'ID: {self.id} | {self.item_type}'
+        translatable_content = self.translatable_content
+
+        if len(translatable_content) > 0:
+            return translatable_content[0].get('title', default)
+
+        return default

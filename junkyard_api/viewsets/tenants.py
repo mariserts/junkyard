@@ -7,6 +7,7 @@ from rest_framework import mixins, viewsets
 
 from ..models import Tenant
 from ..pagination import JunkyardApiPagination
+from ..permissions import AuthenticatedUserPermission, TenantUserPermission
 from ..serializers.tenants import TenantSerializer
 
 
@@ -22,6 +23,10 @@ class TenantsViewSet(
     model: Final = Tenant
     ordering_fields = ['id']
     pagination_class: Final = JunkyardApiPagination
+    permission_classes: Final = (
+        AuthenticatedUserPermission,
+        TenantUserPermission,
+    )
     queryset: Final = model.objects.all()
     serializer_class: Final = TenantSerializer
 

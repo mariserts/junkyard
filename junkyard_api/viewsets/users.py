@@ -7,6 +7,7 @@ from rest_framework import mixins, viewsets
 
 from ..models import User
 from ..pagination import JunkyardApiPagination
+from ..permissions import AuthenticatedUserPermission
 from ..serializers.users import UserSerializer
 
 
@@ -22,6 +23,7 @@ class UsersViewSet(
     model: Final = User
     ordering_fields = ['id']
     pagination_class: Final = JunkyardApiPagination
+    permission_classes: Final = (AuthenticatedUserPermission, )
     queryset: Final = model.objects.all()
     serializer_class: Final = UserSerializer
 

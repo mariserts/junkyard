@@ -9,8 +9,9 @@ from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 
 from .conf import settings
-from .viewsets.items import ItemsViewSet
 from .viewsets.public_items import PublicItemsViewSet
+from .viewsets.tenant_admins import TenantAdminsViewSet
+from .viewsets.tenant_items import TenantItemsViewSet
 from .viewsets.tenants import TenantsViewSet
 from .viewsets.users import UsersViewSet
 
@@ -30,16 +31,17 @@ schema_view = get_schema_view(
 
 
 router = routers.SimpleRouter()
-router.register(r'items', ItemsViewSet, basename='items')
 router.register(r'public-items', PublicItemsViewSet, basename='public-items')
-router.register(r'tenants', TenantsViewSet, basename='tenants')
 router.register(r'users', UsersViewSet, basename='users')
+router.register(r'tenants', TenantsViewSet, basename='tenants')
 
+tenant_router = routers.NestedSimpleRouter(router, r'tenants', lookup='tenant')
+tenant_router.register(r'items', TenantItemsViewSet, basename='items')
+tenant_router.register(r'admins', TenantAdminsViewSet, basename='admins')
 
-specific_type_router = routers.SimpleRouter()
 
 for item_type in settings.ITEM_TYPE_REGISTRY.get_types_as_list():
-    specific_type_router.register(
+    tenant_router.register(
         rf'{item_type.name}',
         item_type.viewset,
         basename=f'{item_type.name}-items'
@@ -67,7 +69,7 @@ urlpatterns = [
         include(router.urls)
     ),
     path(
-        'api/items/',
-        include(specific_type_router.urls)
+        'api/',
+        include(tenant_router.urls)
     ),
 ]
