@@ -1,15 +1,9 @@
+# -*- coding: utf-8 -*-
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 from django.db import models
 
 from . import managers
-from .conf import settings
-
-
-class DateTimeStampedMixin:
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
 
 class User(AbstractUser):
@@ -22,50 +16,59 @@ class User(AbstractUser):
     objects = managers.CustomUserManager()
 
     def save(self, *args, **kwargs):
+
         if self.email in [None, '', ' ']:
             raise ValidationError('Email is required')
+
         self.email = self.email.lower()
         self.username = self.email
+
         super(User, self).save(*args, **kwargs)
 
 
-class Tenant(
-    DateTimeStampedMixin,
-    models.Model
-):
+class Tenant(models.Model):
 
     owner = models.ForeignKey(
         User,
-        related_name='tenants',
         on_delete=models.CASCADE,
+        related_name='tenants',
     )
 
     translatable_content = models.JSONField(
         default=dict
     )
 
+    is_active = models.BooleanField(default=False)
 
-class Item(
-    DateTimeStampedMixin,
-    models.Model
-):
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+class Item(models.Model):
 
     tenant = models.ForeignKey(
         Tenant,
+        on_delete=models.CASCADE,
         related_name='items',
-        on_delete=models.CASCADE
     )
 
     item_type = models.CharField(
+        db_index=True,
         max_length=255,
-        choices='',
     )
     metadata = models.JSONField(
-        default=dict
+        blank=True,
+        default=dict,
+        null=True
     )
     translatable_content = models.JSONField(
-        default=dict
+        blank=True,
+        default=dict,
+        null=True
     )
 
     published = models.BooleanField(default=False)
     published_at = models.DateTimeField(blank=True, null=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)

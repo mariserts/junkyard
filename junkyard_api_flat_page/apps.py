@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from django.apps import AppConfig
 
 
@@ -10,10 +11,8 @@ class JunkyardApiFlatPageConfig(AppConfig):
 
         from junkyard_api.conf import settings as junkyard_api_settings
 
-        from .conf import settings
-        from .serializers import FlatPageSerializer
+        from .registry_entry import FlatPageRegistryEntry
 
         junkyard_api_settings.ITEM_TYPE_REGISTRY.register(
-            settings.ITEM_TYPE,
-            FlatPageSerializer
+            FlatPageRegistryEntry
         )

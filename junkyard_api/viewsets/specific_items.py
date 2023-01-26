@@ -5,32 +5,43 @@ from django.db.models.query import QuerySet
 
 from rest_framework import mixins, viewsets
 
-from ..models import User
+from django_filters import rest_framework as filters
+
+from ..filtersets.items import ItemsFilterSet
+from ..models import Item
 from ..pagination import JunkyardApiPagination
-from ..serializers.users import UserSerializer
+from ..serializers.items import ItemSerializer
 
 
-class UsersViewSet(
+class SpecificItemsViewSet(
     mixins.CreateModelMixin,
     mixins.DestroyModelMixin,
-    mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
     mixins.UpdateModelMixin,
     viewsets.GenericViewSet
 ):
 
-    model: Final = User
-    ordering_fields = ['id']
+    item_type = None
+    filter_backends: Final = (filters.DjangoFilterBackend, )
+    filterset_class: Final = ItemsFilterSet
+    model: Final = Item
+    ordering_fields = ['-id']
     pagination_class: Final = JunkyardApiPagination
     queryset: Final = model.objects.all()
-    serializer_class: Final = UserSerializer
+    serializer_class: Final = ItemSerializer
 
     def get_queryset(
         self: viewsets.GenericViewSet,
     ) -> QuerySet:
 
         queryset = self.queryset.filter(
-            id=self.request.user.id
+            item_type=self.item_type
+        )
+
+        queryset = queryset.filter(
+            tenant__owner_id=self.request.user.id
+        ).select_related(
+            'tenant'
         ).order_by(
             *self.ordering_fields
         )
