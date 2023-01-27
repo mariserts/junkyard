@@ -36,6 +36,13 @@ class Tenant(models.Model):
         on_delete=models.CASCADE,
         related_name='tenants',
     )
+    parent = models.ForeignKey(
+        'Tenant',
+        on_delete=models.CASCADE,
+        related_name='children',
+        blank=True,
+        null=True
+    )
 
     translatable_content = models.JSONField(
         default=dict
