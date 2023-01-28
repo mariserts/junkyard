@@ -52,23 +52,12 @@ class TenantSerializer(serializers.ModelSerializer):
                     args=[object.id],
                     request=self.context.get('request', None)
                 ),
-                'items': {
-                    'all': reverse(
-                        'items-list',
-                        args=[object.id],
-                        request=self.context.get('request', None)
-                    ),
-                },
-            }
-
-            types = settings.ITEM_TYPE_REGISTRY.get_type_names_as_list()
-
-            for item_type in types:
-                data['links']['items'][item_type] = reverse(
-                    f'{item_type}-items-list',
+                'items': reverse(
+                    'items-list',
                     args=[object.id],
                     request=self.context.get('request', None)
                 )
+            }
 
             output.append(data)
 

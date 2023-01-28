@@ -4,43 +4,51 @@ from typing import Final
 from django.db.models import Q
 from django.db.models.query import QuerySet
 
-from rest_framework import mixins, permissions, viewsets
+from rest_framework import mixins, viewsets
+from rest_framework.exceptions import ValidationError
 
 from django_filters import rest_framework as filters
 
 from ..filtersets.items import ItemsFilterSet
 from ..models import Item
 from ..pagination import JunkyardApiPagination
-from ..permissions import AuthenticatedUserPermission, TenantUserPermission
-from ..serializers.items import DynamicReadOnlySerializer, ItemSerializer
+from ..permissions import (
+    AuthenticatedUserPermission,
+    TenantUserPermission,
+)
+from ..serializers.items import ItemSerializer
 
 
 class TenantItemsViewSet(
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
     mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
     viewsets.GenericViewSet
 ):
 
     filter_backends: Final = (filters.DjangoFilterBackend, )
     filterset_class: Final = ItemsFilterSet
     model: Final = Item
-    ordering_fields = ('-id', )
+    ordering_fields: Final = ('-id', )
     pagination_class: Final = JunkyardApiPagination
-    permission_classes: Final = (
+    permission_classes: Final = [
         AuthenticatedUserPermission,
         TenantUserPermission,
-    )
+    ]
     queryset: Final = model.objects.all()
     serializer_class: Final = ItemSerializer
 
-    def get_serializer_class(self):
+    def get_payload_tenant(
+        self: viewsets.GenericViewSet,
+    ) -> int:
+        return self.request.data['tenant']
 
-        if getattr(self, 'swagger_fake_view', False) is True:
-            return self.serializer_class
-
-        if self.request.method in permissions.SAFE_METHODS:
-            return DynamicReadOnlySerializer
-
-        return self.serializer_class
+    def get_kwarg_tenant_pk(
+        self: viewsets.GenericViewSet
+    ) -> str:
+        return self.kwargs['tenant_pk']
 
     def get_queryset(
         self: viewsets.GenericViewSet,
@@ -68,3 +76,21 @@ class TenantItemsViewSet(
         ).distinct()
 
         return queryset
+
+    def update(self, request, *args, **kwargs):
+
+        if str(self.get_payload_tenant()) != str(self.get_kwarg_tenant_pk()):
+            raise ValidationError({
+                'tenant': ['Tenant switching is not allowed']
+            })
+
+        return super().update(request, *args, **kwargs)
+
+    def create(self, request, *args, **kwargs):
+
+        if str(self.get_payload_tenant()) != str(self.get_kwarg_tenant_pk()):
+            raise ValidationError({
+                'tenant': ['Tenant switching is not allowed']
+            })
+
+        return super().create(request, *args, **kwargs)

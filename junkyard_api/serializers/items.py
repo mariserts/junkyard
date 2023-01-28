@@ -1,60 +1,72 @@
 # -*- coding: utf-8 -*-
-from typing import List, Union
+from typing import List, Tuple, Union
 
 from rest_framework import serializers
 from rest_framework.reverse import reverse
 
+from drf_writable_nested.serializers import WritableNestedModelSerializer
+
 from ..conf import settings
-from ..models import Item
+from ..models import Item, ItemRelation
+from ..serializers.item_relations import ItemRelationSerializer
 
 
-class ItemSerializer(serializers.ModelSerializer):
+class ItemSerializer(WritableNestedModelSerializer):
 
     item_type = serializers.ChoiceField(choices=())
     metadata = serializers.JSONField(default=dict, required=False)
     translatable_content = serializers.JSONField(default=[], required=False)
     published = serializers.BooleanField(default=False)
     published_at = serializers.DateTimeField(required=False)
+    parent_items = ItemRelationSerializer(many=True, required=False)
 
     class Meta:
         model = Item
         fields = '__all__'
 
-    def __init__(self, *args, **kwargs):
+    def __init__(
+        self: serializers.BaseSerializer,
+        *args: Union[List, Tuple],
+        **kwargs: dict
+    ) -> None:
 
         super(ItemSerializer, self).__init__(*args, **kwargs)
 
         field = self.fields['item_type']
         field.choices = settings.ITEM_TYPE_REGISTRY.get_type_names_as_choices()
 
-    def get_display_content(
-        self,
-        fallback_language: str = settings.LANGUAGE_DEFAULT,
-        language: str = settings.LANGUAGE_DEFAULT
-    ) -> dict:
+    def save(
+        self: serializers.BaseSerializer,
+        **kwargs: dict
+    ) -> Item:
 
-        language_content = None
-        fallback_content = None
+        validated_data = {**self.validated_data, **kwargs}
+        parent_items = validated_data.get('parent_items', [])
+        relations_to_delete = []
 
-        for translatable_content in self.translatable_content:
+        if self.instance is not None:
+            if len(parent_items) == 0:
+                relations_to_delete = list(
+                    self.instance.parent_items.all().values_list(
+                        'id',
+                        flat=True
+                    )
+                )
 
-            _language = translatable_content.get('language', '-1')
+        instance = super().save(**kwargs)
 
-            if _language == fallback_language:
-                fallback_content = translatable_content.copy()
-            if _language == language:
-                fallback_content = translatable_content.copy()
+        if len(relations_to_delete) > 0:
+            ItemRelation.objects.filter(
+                id__in=relations_to_delete
+            ).delete()
 
-        if language_content is not None:
-            return language_content
-
-        return fallback_content
+        return instance
 
 
 class DynamicReadOnlySerializer(serializers.Serializer):
 
     def get_dynamic_serializer(
-        self: serializers.ModelSerializer,
+        self: serializers.BaseSerializer,
         item_type: str
     ) -> serializers.Serializer:
 
@@ -65,7 +77,7 @@ class DynamicReadOnlySerializer(serializers.Serializer):
         return serializer
 
     def to_representation(
-        self: serializers.Serializer,
+        self: serializers.BaseSerializer,
         instance: Union[Item, List[Item]]
     ) -> dict:
 
@@ -85,7 +97,7 @@ class DynamicReadOnlySerializer(serializers.Serializer):
             data = serializer(object, context=self.context).data
 
             data['link'] = reverse(
-                f'{object.item_type}-items-detail',
+                'items-detail',
                 args=[object.tenant_id, object.id],
                 request=self.context.get('request', None)
             )

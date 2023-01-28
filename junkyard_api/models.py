@@ -342,6 +342,10 @@ class Item(models.Model):
         on_delete=models.CASCADE,
         related_name='items',
     )
+    parent_items = models.ManyToManyField(
+        'ItemRelation',
+        blank=True,
+    )
 
     item_type = models.CharField(
         db_index=True,
@@ -373,3 +377,17 @@ class Item(models.Model):
             return translatable_content[0].get('title', default)
 
         return default
+
+
+class ItemRelation(models.Model):
+
+    parent = models.ForeignKey(
+        Item,
+        on_delete=models.CASCADE,
+        related_name='child_items'
+    )
+    label = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True
+    )

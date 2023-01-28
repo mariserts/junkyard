@@ -82,6 +82,7 @@ class UserAdmin(UserAdmin):
 
 
 admin.site.register(models.Item)
+admin.site.register(models.ItemRelation)
 admin.site.register(models.User, UserAdmin)
 admin.site.register(models.Tenant)
 admin.site.register(models.TenantAdmin)
