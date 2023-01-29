@@ -309,3 +309,52 @@ class TenantItemsViewSetTestCase(TestCase):
             ItemRelation.objects.all().count(),
             0
         )
+
+    def test_item_relations_update(self):
+
+        self.client.post(
+            f'/api/tenants/{self.tenant.id}/items/',
+            {
+                'item_type': 'flat-page',
+                'tenant': self.tenant.id,
+                'translatable_content': [{
+                    'language': 'en',
+                    'title': 'Test',
+                    'content': 'Test'
+                }],
+            },
+            format='json'
+        )
+
+        self.client.post(
+            f'/api/tenants/{self.tenant.id}/items/',
+            {
+                'item_type': 'flat-page',
+                'tenant': self.tenant.id,
+                'translatable_content': [{
+                    'language': 'en',
+                    'title': 'Test_Bbb',
+                    'content': 'Test_Bbb'
+                }],
+                'parent_items': [
+                    {
+                        'parent': 1,
+                        'label': 'a'
+                    },
+                    {
+                        'parent': 1,
+                        'label': 'b'
+                    },
+                    {
+                        'parent': 1,
+                        'label': 'c'
+                    },
+                ]
+            },
+            format='json'
+        )
+
+        self.assertEquals(
+            ItemRelation.objects.all().count(),
+            3
+        )

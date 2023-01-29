@@ -13,6 +13,7 @@ from ..serializers.item_relations import ItemRelationSerializer
 
 class ItemSerializer(WritableNestedModelSerializer):
 
+    id = serializers.IntegerField(required=False)
     item_type = serializers.ChoiceField(choices=())
     metadata = serializers.JSONField(default=dict, required=False)
     translatable_content = serializers.JSONField(default=[], required=False)
@@ -42,22 +43,33 @@ class ItemSerializer(WritableNestedModelSerializer):
 
         validated_data = {**self.validated_data, **kwargs}
         parent_items = validated_data.get('parent_items', [])
-        relations_to_delete = []
+
+        existing_relations_ids = []
+        relation_to_keep_ids = []
+        relations_to_delete_ids = []
 
         if self.instance is not None:
-            if len(parent_items) == 0:
-                relations_to_delete = list(
-                    self.instance.parent_items.all().values_list(
-                        'id',
-                        flat=True
-                    )
+
+            existing_relations_ids = list(
+                self.instance.parent_items.all().values_list(
+                    'id',
+                    flat=True
                 )
+            )
+
+            for relation in parent_items:
+                if 'id' in relation:
+                    relation_to_keep_ids.append(relation['id'])
+
+            for id in existing_relations_ids:
+                if id not in relation_to_keep_ids:
+                    relations_to_delete_ids.append(id)
 
         instance = super().save(**kwargs)
 
-        if len(relations_to_delete) > 0:
+        if len(relations_to_delete_ids) > 0:
             ItemRelation.objects.filter(
-                id__in=relations_to_delete
+                id__in=relations_to_delete_ids
             ).delete()
 
         return instance
