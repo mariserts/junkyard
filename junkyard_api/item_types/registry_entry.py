@@ -3,4 +3,3 @@ class RegistryEntry:
 
     name = None
     serializer = None
-    viewset = None
