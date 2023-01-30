@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from typing import List
+from typing import List, Union
 
 from django.core.cache import cache
 from django.contrib.auth.models import AbstractUser
@@ -10,6 +10,8 @@ from django.db.models.query import QuerySet
 
 from . import managers
 from .conf import settings
+from .exceptions import ItemTypeNotFoundException, NoItemTypeAccessException
+from .item_types.registry_entry import RegistryEntry
 
 
 class User(AbstractUser):
@@ -72,6 +74,51 @@ class Tenant(models.Model):
             return translatable_content[0].get('title', default)
 
         return default
+
+    #
+    # Item types
+    #
+
+    @staticmethod
+    def get_tenant_item_types(
+        pk: Union[str, int]
+    ) -> RegistryEntry:
+        return settings.ITEM_TYPE_REGISTRY.get_types(
+            root_tenant_only=Tenant.is_root_tenant(pk)
+        )
+
+    @staticmethod
+    def get_tenant_item_type(
+        pk: Union[str, int],
+        item_type: str
+    ) -> RegistryEntry:
+
+        _item_type = settings.ITEM_TYPE_REGISTRY.find(item_type)
+
+        is_root_tenant = Tenant.is_root_tenant(pk)
+
+        if _item_type.root_tenant_only is not is_root_tenant:
+            raise NoItemTypeAccessException(
+                f'Tenant "{pk}" can not access item type "{item_type}"'
+            )
+
+        return _item_type
+
+    #
+    #
+    #
+
+    def is_root(self):
+        return self.parent is None
+
+    @staticmethod
+    def is_root_tenant(
+        pk: Union[int, str]
+    ) -> bool:
+        # XXXX: Perf imrovements posible
+        # Could cache this for small amount of time
+        # Could update cache key on save()
+        return Tenant.objects.filter(pk=pk, parent=None).exists()
 
     @staticmethod
     def get_all_children(
@@ -207,6 +254,10 @@ class Tenant(models.Model):
         )
 
         return ids
+
+    #
+    # User access
+    #
 
     @staticmethod
     def user_has_access(

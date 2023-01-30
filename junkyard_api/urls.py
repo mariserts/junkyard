@@ -13,11 +13,13 @@ from .viewsets.tenant_admins import TenantAdminsViewSet
 from .viewsets.tenant_items_item_relations import (
     TenantItemItemRelationsViewSet
 )
+from .viewsets.tenant_item_types import TenantItemTypesViewSet
 from .viewsets.tenant_items import TenantItemsViewSet
 from .viewsets.tenants import TenantsViewSet
 from .viewsets.users import UsersViewSet
 
 
+# drf yasg
 schema_view = get_schema_view(
     openapi.Info(
         title='Junkyard API',
@@ -32,20 +34,56 @@ schema_view = get_schema_view(
 )
 
 
+#
 router = routers.SimpleRouter()
-router.register(r'public-items', PublicItemsViewSet, basename='public-items')
-router.register(r'users', UsersViewSet, basename='users')
-router.register(r'tenants', TenantsViewSet, basename='tenants')
 
+# Base urls
+router.register(
+    r'public-items',
+    PublicItemsViewSet,
+    basename='public-items'
+)
+router.register(
+    r'users',
+    UsersViewSet,
+    basename='users'
+)
+router.register(
+    r'tenants',
+    TenantsViewSet,
+    basename='tenants'
+)
+
+
+# tenant router
 tenant_router = routers.NestedSimpleRouter(router, r'tenants', lookup='tenant')
-tenant_router.register(r'items', TenantItemsViewSet, basename='items')
-tenant_router.register(r'admins', TenantAdminsViewSet, basename='admins')
 
+# tenant nested urls
+tenant_router.register(
+    r'admins',
+    TenantAdminsViewSet,
+    basename='admins'
+)
+tenant_router.register(
+    r'item-types',
+    TenantItemTypesViewSet,
+    basename='item_types'
+)
+tenant_router.register(
+    r'items',
+    TenantItemsViewSet,
+    basename='items'
+)
+
+
+# Items router
 items_router = routers.NestedSimpleRouter(
     tenant_router,
     r'items',
     lookup='item'
 )
+
+# Items nested urls
 items_router.register(
     r'relations',
     TenantItemItemRelationsViewSet,

@@ -4,7 +4,8 @@ from typing import List, Tuple, Union
 from rest_framework import serializers
 
 from ..conf import settings
-from ..models import Item, ItemRelation
+from ..exceptions import ItemTypeNotFoundException
+from ..models import Item, ItemRelation, Tenant
 
 from .item_relations import NestedItemRelationSerializer
 
@@ -35,43 +36,7 @@ class ItemSerializer(serializers.ModelSerializer):
         super(ItemSerializer, self).__init__(*args, **kwargs)
 
         field = self.fields['item_type']
-        field.choices = settings.ITEM_TYPE_REGISTRY.get_type_names_as_choices()
-
-    def pre_save(
-        self: serializers.BaseSerializer,
-    ) -> None:
-
-        """
-
-        Pre save actions to do
-
-        Returns:
-        - None
-
-        """
-
-        pass
-
-    def post_save(
-        self: serializers.BaseSerializer,
-        instance: Item,
-        initial_validated_data: dict,
-    ) -> None:
-
-        """
-
-        Post save actions to do
-
-        Attrs:
-        - instance Item: item object
-        - initial_validated_data: initial validated data before save is called
-
-        Returns:
-        - None
-
-        """
-
-        pass
+        field.choices = settings.ITEM_TYPE_REGISTRY.get_types(format='choices')
 
     def to_representation(
         self: serializers.BaseSerializer,
@@ -113,6 +78,29 @@ class ItemSerializer(serializers.ModelSerializer):
         data = super().to_representation(object)
 
         return data
+
+    def validate_item_type(self, value):
+
+        if self.instance is not None:
+            tenant_pk = self.instance.tenant_id
+        else:
+            tenant_pk = self._kwargs['data']['tenant']
+
+        is_root = Tenant.is_root_tenant(tenant_pk)
+
+        try:
+            item_type = settings.ITEM_TYPE_REGISTRY.find(value)
+        except ItemTypeNotFoundException:
+            raise serializers.ValidationError(
+                'Item type does not exist'
+            )
+
+        if item_type.root_tenant_only is not is_root:
+            raise serializers.ValidationError(
+                'Tenant has no access to this item type'
+            )
+
+        return item_type.name
 
     def save(
         self: serializers.BaseSerializer,
@@ -241,3 +229,39 @@ class ItemSerializer(serializers.ModelSerializer):
             ).update(
                 **parent_item
             )
+
+    def pre_save(
+        self: serializers.BaseSerializer,
+    ) -> None:
+
+        """
+
+        Pre save actions to do
+
+        Returns:
+        - None
+
+        """
+
+        pass
+
+    def post_save(
+        self: serializers.BaseSerializer,
+        instance: Item,
+        initial_validated_data: dict,
+    ) -> None:
+
+        """
+
+        Post save actions to do
+
+        Attrs:
+        - instance Item: item object
+        - initial_validated_data: initial validated data before save is called
+
+        Returns:
+        - None
+
+        """
+
+        pass

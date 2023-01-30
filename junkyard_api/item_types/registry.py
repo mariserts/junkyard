@@ -50,41 +50,10 @@ class ItemTypeRegistry(BaseItemTypeRegistry):
             return None
         return entry.serializer
 
-    def get_type_names_as_choices(
+    def get_types(
         self: BaseItemTypeRegistry,
         root_tenant_only: Union[None, bool] = None,
-    ) -> List[List[str]]:
-
-        output = []
-
-        item_types = self.get_types_as_list(
-            root_tenant_only=root_tenant_only
-        )
-
-        for item_type in item_types:
-            output.append([item_type.name, item_type.name])
-
-        return output
-
-    def get_type_names_as_list(
-        self: BaseItemTypeRegistry,
-        root_tenant_only: Union[None, bool] = None,
-    ) -> List[str]:
-
-        output = []
-
-        item_types = self.get_types_as_list(
-            root_tenant_only=root_tenant_only
-        )
-
-        for item_type in item_types:
-            output.append(item_type.name)
-
-        return output
-
-    def get_types_as_list(
-        self: BaseItemTypeRegistry,
-        root_tenant_only: Union[None, bool] = None,
+        format: str = 'list'
     ) -> List[RegistryEntry]:
 
         types = []
@@ -94,10 +63,25 @@ class ItemTypeRegistry(BaseItemTypeRegistry):
             add = True
 
             if root_tenant_only is not None:
-                if value.root_tenant_only is root_tenant_only:
+                if value.root_tenant_only is not root_tenant_only:
                     add = False
 
             if add is True:
                 types.append(value)
 
-        return types
+        if format == 'list':
+            return types
+
+        output = []
+
+        output = []
+
+        if format == 'names':
+            for item_type in types:
+                output.append(item_type.name)
+
+        if format == 'choices':
+            for item_type in types:
+                output.append([item_type.name, item_type.name])
+
+        return output

@@ -10,6 +10,12 @@ class ViewSetPayloadMixin:
     ) -> int:
         return self.request.data.get('tenant', default)
 
+    def get_payload_item_type(
+        self: viewsets.GenericViewSet,
+        default: None = None,
+    ) -> str:
+        return self.request.data.get('item_type', default)
+
 
 class ViewSetKwargsMixin:
 
