@@ -81,7 +81,27 @@ class UserAdmin(UserAdmin):
     )
 
 
-admin.site.register(models.Item)
+class ItemRelationAdmin(admin.TabularInline):
+    extra = 0
+    fk_name = 'child'
+    raw_id_fields = ['parent', 'child']
+    model = models.ItemRelation
+
+
+class ItemAdmin(admin.ModelAdmin):
+    inlines = [ItemRelationAdmin, ]
+    raw_id_fields = ['tenant']
+
+
+class TenantAdmin(admin.ModelAdmin):
+    raw_id_fields = ['parent']
+
+
+class TenantAdminAdmin(admin.ModelAdmin):
+    raw_id_fields = ['tenant', 'user']
+
+
+admin.site.register(models.Item, ItemAdmin)
 admin.site.register(models.User, UserAdmin)
-admin.site.register(models.Tenant)
-admin.site.register(models.TenantAdmin)
+admin.site.register(models.Tenant, TenantAdmin)
+admin.site.register(models.TenantAdmin, TenantAdminAdmin)

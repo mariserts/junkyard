@@ -37,13 +37,6 @@ class ItemTypeRegistry:
             return None
         return entry.serializer
 
-    def get_viewset(self, name):
-        try:
-            entry = self.find(name)
-        except ItemTypeNotFoundException:
-            return None
-        return entry.viewset
-
     def get_type_names_as_choices(self) -> List[List[str]]:
         types = []
         for key in self.types.keys():
