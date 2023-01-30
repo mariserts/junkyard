@@ -6,7 +6,10 @@ from django.db.models.query import QuerySet
 
 from rest_framework import mixins, viewsets
 
+from django_filters import rest_framework as filters
+
 from ..conf import settings
+from ..filtersets.tenants import TenantsFilterSet
 from ..models import Tenant
 from ..pagination import JunkyardApiPagination
 from ..permissions import AuthenticatedUserPermission, TenantUserPermission
@@ -22,6 +25,8 @@ class TenantsViewSet(
     viewsets.GenericViewSet
 ):
 
+    filter_backends: Final = (filters.DjangoFilterBackend, )
+    filterset_class: Final = TenantsFilterSet
     model: Final = Tenant
     ordering_fields: Final = ('id', )
     pagination_class: Final = JunkyardApiPagination
