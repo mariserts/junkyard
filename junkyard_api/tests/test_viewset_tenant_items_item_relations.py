@@ -27,6 +27,7 @@ class TenantItemsItemRelationsViewSetTestCase(TestCase):
                 'language': 'en',
                 'title': 'Test',
                 'content': 'Test',
+                'slug': 'test'
             }],
         )
 
@@ -37,6 +38,7 @@ class TenantItemsItemRelationsViewSetTestCase(TestCase):
                 'language': 'en',
                 'title': 'Test_Bbb',
                 'content': 'Test Bbb',
+                'slug': 'test-bbb'
             }],
         )
 

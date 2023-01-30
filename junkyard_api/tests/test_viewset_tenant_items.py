@@ -81,7 +81,8 @@ class TenantItemsViewSetTestCase(TestCase):
                 'translatable_content': [{
                     'language': 'en',
                     'title': 'test',
-                    'content': 'test'
+                    'content': 'test',
+                    'slug': 'test'
                 }]
             },
             format='json'
@@ -100,7 +101,8 @@ class TenantItemsViewSetTestCase(TestCase):
                 'translatable_content': [{
                     'language': 'en',
                     'title': 'test',
-                    'content': 'test'
+                    'content': 'test',
+                    'slug': 'test'
                 }]
             },
             format='json'
@@ -121,7 +123,8 @@ class TenantItemsViewSetTestCase(TestCase):
                 'translatable_content': [{
                     'language': 'en',
                     'title': 'test',
-                    'content': 'test'
+                    'content': 'test',
+                    'slug': 'test'
                 }]
             },
             format='json'
@@ -140,7 +143,8 @@ class TenantItemsViewSetTestCase(TestCase):
                 'translatable_content': [{
                     'language': 'en',
                     'title': 'Test',
-                    'content': 'Test'
+                    'content': 'Test',
+                    'slug': 'test'
                 }]
             },
             format='json'
@@ -164,7 +168,8 @@ class TenantItemsViewSetTestCase(TestCase):
                 'translatable_content': [{
                     'language': 'en',
                     'title': 'test',
-                    'content': 'test'
+                    'content': 'test',
+                    'slug': 'test'
                 }]
             },
             format='json'
@@ -185,7 +190,8 @@ class TenantItemsViewSetTestCase(TestCase):
                 'translatable_content': [{
                     'language': 'en',
                     'title': 'test',
-                    'content': 'test'
+                    'content': 'test',
+                    'slug': 'test'
                 }]
             },
             format='json'
@@ -221,7 +227,8 @@ class TenantItemsViewSetTestCase(TestCase):
                 'translatable_content': [{
                     'language': 'en',
                     'title': 'Test',
-                    'content': 'Test'
+                    'content': 'Test',
+                    'slug': 'test'
                 }]
             },
             format='json'
@@ -235,7 +242,8 @@ class TenantItemsViewSetTestCase(TestCase):
                 'translatable_content': [{
                     'language': 'en',
                     'title': 'TestBbb',
-                    'content': 'TestBbb'
+                    'content': 'TestBbb',
+                    'slug': 'testbbb'
                 }]
             },
             format='json'
@@ -249,7 +257,8 @@ class TenantItemsViewSetTestCase(TestCase):
                 'translatable_content': [{
                     'language': 'en',
                     'title': 'Test',
-                    'content': 'Test'
+                    'content': 'Test',
+                    'slug': 'test'
                 }],
                 'parent_items': [{
                     'parent_id': 2,
@@ -273,7 +282,8 @@ class TenantItemsViewSetTestCase(TestCase):
                 'translatable_content': [{
                     'language': 'en',
                     'title': 'Test',
-                    'content': 'Test'
+                    'content': 'Test',
+                    'slug': 'test'
                 }],
                 'parent_items': [{
                     'id': 1,
@@ -303,7 +313,8 @@ class TenantItemsViewSetTestCase(TestCase):
                 'translatable_content': [{
                     'language': 'en',
                     'title': 'Test',
-                    'content': 'Test'
+                    'content': 'Test',
+                    'slug': 'test'
                 }],
                 'parent_items': []
             },
@@ -325,7 +336,8 @@ class TenantItemsViewSetTestCase(TestCase):
                 'translatable_content': [{
                     'language': 'en',
                     'title': 'Test',
-                    'content': 'Test'
+                    'content': 'Test',
+                    'slug': 'test'
                 }],
             },
             format='json'
@@ -339,7 +351,8 @@ class TenantItemsViewSetTestCase(TestCase):
                 'translatable_content': [{
                     'language': 'en',
                     'title': 'Test_Bbb',
-                    'content': 'Test_Bbb'
+                    'content': 'Test_Bbb',
+                    'slug': 'test-bbb'
                 }],
                 'parent_items': [
                     {
@@ -372,7 +385,8 @@ class TenantItemsViewSetTestCase(TestCase):
                 'translatable_content': [{
                     'language': 'en',
                     'title': 'Test_Bbb',
-                    'content': 'Test_Bbb'
+                    'content': 'Test_Bbb',
+                    'slug': 'test-bbb'
                 }],
                 'parent_items': []
             },
@@ -394,7 +408,8 @@ class TenantItemsViewSetTestCase(TestCase):
                 'translatable_content': [{
                     'language': 'en',
                     'title': 'Test',
-                    'content': 'Test'
+                    'content': 'Test',
+                    'slug': 'test'
                 }],
             },
             format='json'
@@ -408,7 +423,8 @@ class TenantItemsViewSetTestCase(TestCase):
                 'translatable_content': [{
                     'language': 'en',
                     'title': 'Test_Bbb',
-                    'content': 'Test_Bbb'
+                    'content': 'Test_Bbb',
+                    'slug': 'test-bbb'
                 }],
                 'parent_items': [
                     {

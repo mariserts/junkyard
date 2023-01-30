@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     #
     'junkyard_api',
     'junkyard_api_flat_page',
+    'junkyard_api_news',
     #
     'debug_toolbar',
 ]

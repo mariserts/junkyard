@@ -5,3 +5,7 @@ class ItemTypeDuplicationException(Exception):
 
 class ItemTypeNotFoundException(Exception):
     pass
+
+
+class NoItemTypeAccessException(Exception):
+    pass
