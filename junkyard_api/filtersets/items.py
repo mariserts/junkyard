@@ -31,7 +31,7 @@ class ItemsFilterSet(FilterSet):
         # url/?item_type=1&item_type=2
         # https://www.rfc-editor.org/rfc/rfc3986
 
-        allowed_types = settings.ITEM_TYPE_REGISTRY.get_type_names_as_list()
+        allowed_types = settings.ITEM_TYPE_REGISTRY.get_types(format='names')
 
         if len(value) == 0:
             return queryset

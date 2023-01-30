@@ -5,9 +5,13 @@ from django.db.models import Q
 from django.db.models.query import QuerySet
 
 from rest_framework import mixins, viewsets
+from rest_framework.exceptions import ValidationError
+from rest_framework.response import Response
 
 from django_filters import rest_framework as filters
 
+from ..filtersets.tenant_admins import TenantAdminsFilterSet
+from ..mixins import ViewSetKwargsMixin
 from ..models import TenantAdmin
 from ..pagination import JunkyardApiPagination
 from ..permissions import AuthenticatedUserPermission, TenantUserPermission
@@ -20,10 +24,12 @@ class TenantAdminsViewSet(
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
     mixins.UpdateModelMixin,
+    ViewSetKwargsMixin,
     viewsets.GenericViewSet
 ):
 
     filter_backends: Final = (filters.DjangoFilterBackend, )
+    filterset_class = TenantAdminsFilterSet
     model: Final = TenantAdmin
     ordering_fields = ('-id', )
     pagination_class: Final = JunkyardApiPagination
@@ -62,3 +68,35 @@ class TenantAdminsViewSet(
         ).distinct()
 
         return queryset
+
+    def update(self, request, *args, **kwargs):
+
+        try:
+            request_data_tenant_pk = request.data['tenant']
+        except KeyError:
+            return Response('"tenant" is not provided')
+
+        tenant_pk = self.get_kwarg_tenant_pk()
+
+        if str(request_data_tenant_pk) != str(tenant_pk):
+            raise ValidationError({
+                'tenant': ['Tenant switching is not allowed']
+            })
+
+        return super().update(request, *args, **kwargs)
+
+    def create(self, request, *args, **kwargs):
+
+        try:
+            request_data_tenant_pk = request.data['tenant']
+        except KeyError:
+            return Response('"tenant" is not provided')
+
+        tenant_pk = self.get_kwarg_tenant_pk()
+
+        if str(request_data_tenant_pk) != str(tenant_pk):
+            raise ValidationError({
+                'tenant': ['Tenant switching is not allowed']
+            })
+
+        return super().create(request, *args, **kwargs)
