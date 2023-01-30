@@ -12,22 +12,26 @@ class TenantGetAllChildrenTestCase(TestCase):
 
         tenant_aaa = Tenant.objects.create(
             owner=user,
-            translatable_content=[{'language': 'en', 'title': 'aaa'}]
+            translatable_content=[{'language': 'en', 'title': 'aaa'}],
+            is_active=True,
         )
         tenant_bbb = Tenant.objects.create(
             owner=user,
             parent=tenant_aaa,
-            translatable_content=[{'language': 'en', 'title': 'bbb'}]
+            translatable_content=[{'language': 'en', 'title': 'bbb'}],
+            is_active=True,
         )
         tenant_ccc = Tenant.objects.create(
             owner=user,
             parent=tenant_bbb,
-            translatable_content=[{'language': 'en', 'title': 'ccc'}]
+            translatable_content=[{'language': 'en', 'title': 'ccc'}],
+            is_active=True,
         )
         tenant_ddd = Tenant.objects.create(
             owner=user,
             parent=tenant_ccc,
-            translatable_content=[{'language': 'en', 'title': 'ddd'}]
+            translatable_content=[{'language': 'en', 'title': 'ddd'}],
+            is_active=True,
         )
 
         children = Tenant.get_all_children_ids(tenant_aaa)

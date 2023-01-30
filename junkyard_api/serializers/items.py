@@ -2,16 +2,17 @@
 from typing import List, Tuple, Union
 
 from rest_framework import serializers
-from rest_framework.reverse import reverse
-
-from drf_writable_nested.serializers import WritableNestedModelSerializer
 
 from ..conf import settings
 from ..models import Item, ItemRelation
-from ..serializers.item_relations import ItemRelationSerializer
+
+from .item_relations import NestedItemRelationSerializer
 
 
-class ItemSerializer(WritableNestedModelSerializer):
+class ItemSerializer(serializers.ModelSerializer):
+
+    _existing_relations_ids = []
+    _createble_relations = []
 
     id = serializers.IntegerField(required=False)
     item_type = serializers.ChoiceField(choices=())
@@ -19,7 +20,7 @@ class ItemSerializer(WritableNestedModelSerializer):
     translatable_content = serializers.JSONField(default=[], required=False)
     published = serializers.BooleanField(default=False)
     published_at = serializers.DateTimeField(required=False)
-    parent_items = ItemRelationSerializer(many=True, required=False)
+    parent_items = NestedItemRelationSerializer(many=True, required=False)
 
     class Meta:
         model = Item
@@ -36,87 +37,207 @@ class ItemSerializer(WritableNestedModelSerializer):
         field = self.fields['item_type']
         field.choices = settings.ITEM_TYPE_REGISTRY.get_type_names_as_choices()
 
+    def pre_save(
+        self: serializers.BaseSerializer,
+    ) -> None:
+
+        """
+
+        Pre save actions to do
+
+        Returns:
+        - None
+
+        """
+
+        pass
+
+    def post_save(
+        self: serializers.BaseSerializer,
+        instance: Item,
+        initial_validated_data: dict,
+    ) -> None:
+
+        """
+
+        Post save actions to do
+
+        Attrs:
+        - instance Item: item object
+        - initial_validated_data: initial validated data before save is called
+
+        Returns:
+        - None
+
+        """
+
+        pass
+
+    def to_representation(
+        self: serializers.BaseSerializer,
+        object: Union[Item, List[Item]],
+    ) -> Union[List, dict]:
+
+        if self.context.get('_nested', True) is True:
+
+            output = []
+
+            many = True
+            instances = object
+
+            if type(object) != list:
+                many = False
+                instances = [object, ]
+
+            for instance in instances:
+
+                item_type = instance.item_type
+                serializer = settings.ITEM_TYPE_REGISTRY.get_serializer(
+                    item_type)
+                if serializer is None:
+                    serializer = ItemSerializer
+
+                context = self.context.copy()
+                context['_nested'] = False
+
+                # Doubles amount of validation?
+                output_data = serializer(instance, context=context).data
+
+                output.append(output_data)
+
+            if many is True:
+                return output
+
+            return next(iter(output), None)
+
+        data = super().to_representation(object)
+
+        return data
+
     def save(
         self: serializers.BaseSerializer,
         **kwargs: dict
     ) -> Item:
 
+        self.pre_save()
+
         validated_data = {**self.validated_data, **kwargs}
-        parent_items = validated_data.get('parent_items', [])
 
-        existing_relations_ids = []
-        relation_to_keep_ids = []
-        relations_to_delete_ids = []
+        self.set_parent_items_management_data(self.instance, validated_data)
 
-        if self.instance is not None:
+        #
+        if 'parent_items' in self.validated_data:
+            del self.validated_data['parent_items']
 
-            existing_relations_ids = list(
-                self.instance.parent_items.all().values_list(
-                    'id',
-                    flat=True
-                )
-            )
-
-            for relation in parent_items:
-                if 'id' in relation:
-                    relation_to_keep_ids.append(relation['id'])
-
-            for id in existing_relations_ids:
-                if id not in relation_to_keep_ids:
-                    relations_to_delete_ids.append(id)
-
+        #
         instance = super().save(**kwargs)
 
-        if len(relations_to_delete_ids) > 0:
-            ItemRelation.objects.filter(
-                id__in=relations_to_delete_ids
-            ).delete()
+        self.manage_parent_items_relations(instance, validated_data)
+
+        self.post_save(instance, validated_data)
 
         return instance
 
-
-class DynamicReadOnlySerializer(serializers.Serializer):
-
-    def get_dynamic_serializer(
+    def set_parent_items_management_data(
         self: serializers.BaseSerializer,
-        item_type: str
-    ) -> serializers.Serializer:
+        instance: Item,
+        validated_data: dict,
+    ) -> None:
 
-        serializer = settings.ITEM_TYPE_REGISTRY.get_serializer(item_type)
-        if serializer is None:
-            return ItemSerializer
+        """
 
-        return serializer
+        Sets data for item relation management
 
-    def to_representation(
-        self: serializers.BaseSerializer,
-        instance: Union[Item, List[Item]]
-    ) -> dict:
+        Attrs:
+        - instance Item: - item object
+        - validated_data dict: - serializer validated data
 
-        many = False
-        if type(instance) == list:
-            many = True
+        Returns:
+        - None
 
-        if many is False:
-            instance = [instance, ]
+        """
 
-        output = []
+        parent_items = validated_data.get('parent_items', [])
+        instance_id = getattr(instance, 'id', None)
 
-        for object in instance:
+        errors = {'parent_items': []}
+        self._parent_items_to_create = []
+        self._parent_items_to_update = []
+        self._parent_items_to_update_ids = []
+        self._parent_items_ids_to_delete = []
+        self._parent_items_existing_relations_ids = []
 
-            serializer = self.get_dynamic_serializer(object.item_type)
-
-            data = serializer(object, context=self.context).data
-
-            data['link'] = reverse(
-                'items-detail',
-                args=[object.tenant_id, object.id],
-                request=self.context.get('request', None)
+        #
+        if instance is not None:
+            self._parent_items_existing_relations_ids = list(
+                instance.parent_items.all().values_list('id', flat=True)
             )
 
-            output.append(data)
+        #
+        for parent_item in parent_items:
 
-        if many is True:
-            return output
+            child_id = parent_item.get('child_id', None)
+            id = parent_item.get('id', None)
+            create = id is None
 
-        return next(iter(output), None)
+            if instance_id != child_id:
+                errors['parent_items'].append({
+                    'child': 'Child id must match instance id'
+                })
+            else:
+                if create is True:
+                    self._parent_items_to_create.append(parent_item)
+                else:
+                    self._parent_items_to_update_ids.append(id)
+                    self._parent_items_to_update.append(parent_item)
+
+        #
+        if len(errors['parent_items']) > 0:
+            raise serializers.ValidationError(errors)
+
+        #
+        if len(self._parent_items_existing_relations_ids) > 0:
+            self._parent_items_ids_to_delete = list(
+                set(self._parent_items_existing_relations_ids).difference(
+                    set(self._parent_items_to_update_ids)
+                )
+            )
+
+    def manage_parent_items_relations(
+        self: serializers.BaseSerializer,
+        instance: Item,
+        validated_data: dict,
+    ) -> None:
+
+        """
+
+        Manages item relation management
+
+        Attrs:
+        - instance Item: - saved item object
+        - validated_data dict: - serializer validated data
+
+        Returns:
+        - None
+
+        """
+
+        #
+        if len(self._parent_items_ids_to_delete) > 0:
+            ItemRelation.objects.filter(
+                id__in=self._parent_items_ids_to_delete
+            ).delete()
+
+        #
+        for parent_item in self._parent_items_to_create:
+            parent_item['child'] = instance
+            ItemRelation.objects.create(**parent_item)
+
+        #
+        for parent_item in self._parent_items_to_update:
+            parent_item['child'] = instance
+            ItemRelation.objects.filter(
+                id=parent_item['id']
+            ).update(
+                **parent_item
+            )

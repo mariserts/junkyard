@@ -10,6 +10,7 @@ from rest_framework.exceptions import ValidationError
 from django_filters import rest_framework as filters
 
 from ..filtersets.items import ItemsFilterSet
+from ..mixins import ViewSetKwargsMixin, ViewSetPayloadMixin
 from ..models import Item
 from ..pagination import JunkyardApiPagination
 from ..permissions import (
@@ -25,6 +26,8 @@ class TenantItemsViewSet(
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
     mixins.UpdateModelMixin,
+    ViewSetKwargsMixin,
+    ViewSetPayloadMixin,
     viewsets.GenericViewSet
 ):
 
@@ -40,21 +43,11 @@ class TenantItemsViewSet(
     queryset: Final = model.objects.all()
     serializer_class: Final = ItemSerializer
 
-    def get_payload_tenant(
-        self: viewsets.GenericViewSet,
-    ) -> int:
-        return self.request.data['tenant']
-
-    def get_kwarg_tenant_pk(
-        self: viewsets.GenericViewSet
-    ) -> str:
-        return self.kwargs['tenant_pk']
-
     def get_queryset(
         self: viewsets.GenericViewSet,
     ) -> QuerySet:
 
-        tenant_pk = self.kwargs.get('tenant_pk', None)
+        tenant_pk = self.get_kwarg_tenant_pk()
         user_id = self.request.user.id
 
         queryset = self.queryset.filter(tenant_id=tenant_pk)
@@ -68,7 +61,8 @@ class TenantItemsViewSet(
         ).select_related(
             'tenant',
         ).prefetch_related(
-            'tenant__admins'
+            'tenant__admins',
+            'parent_items',
         )
 
         queryset = queryset.order_by(

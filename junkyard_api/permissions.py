@@ -17,7 +17,7 @@ class TenantUserPermission(permissions.BasePermission):
         id = view.kwargs.get('pk', '-1')
         tenant_id = view.kwargs.get('tenant_pk', id)
 
-        if tenant_id is -1:
+        if tenant_id == '-1':
             return True
 
         return Tenant.user_has_access(tenant_id, request.user.id)

@@ -10,7 +10,6 @@ django-filter==22.1
 django_debug_toolbar==3.8.1
 djangorestframework==3.14.0
 drf-nested-routers==0.93.4
-drf-writable-nested==0.7.0
 drf-yasg==1.21.4
 filelock==3.9.0
 identify==2.5.15

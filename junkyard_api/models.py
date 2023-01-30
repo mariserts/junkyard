@@ -55,7 +55,7 @@ class Tenant(models.Model):
     )
 
     translatable_content = models.JSONField(
-        default=dict
+        default=list
     )
 
     is_active = models.BooleanField(default=False)
@@ -240,7 +240,8 @@ class Tenant(models.Model):
         # Check if user is admin of current tenant
 
         queryset = Tenant.objects.filter(
-            id=tenant_id
+            id=tenant_id,
+            is_active=True,
         )
 
         condition = Q()
@@ -342,10 +343,6 @@ class Item(models.Model):
         on_delete=models.CASCADE,
         related_name='items',
     )
-    parent_items = models.ManyToManyField(
-        'ItemRelation',
-        blank=True,
-    )
 
     item_type = models.CharField(
         db_index=True,
@@ -358,7 +355,7 @@ class Item(models.Model):
     )
     translatable_content = models.JSONField(
         blank=True,
-        default=dict,
+        default=list,
         null=True
     )
 
@@ -386,8 +383,18 @@ class ItemRelation(models.Model):
         on_delete=models.CASCADE,
         related_name='child_items'
     )
+    child = models.ForeignKey(
+        Item,
+        on_delete=models.CASCADE,
+        related_name='parent_items'
+    )
     label = models.CharField(
         max_length=255,
         blank=True,
+        null=True
+    )
+    metadata = models.JSONField(
+        blank=True,
+        default=dict,
         null=True
     )

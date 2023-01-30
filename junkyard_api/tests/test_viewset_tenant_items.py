@@ -17,15 +17,18 @@ class TenantItemsViewSetTestCase(TestCase):
         )
         self.tenant = Tenant.objects.create(
             owner=self.user,
-            translatable_content=[{'language': 'en', 'title': 'Test'}]
+            translatable_content=[{'language': 'en', 'title': 'Test'}],
+            is_active=True,
         )
         self.tenant_bbb = Tenant.objects.create(
             owner=self.user_bbb,
-            translatable_content=[{'language': 'en', 'title': 'TestBbb'}]
+            translatable_content=[{'language': 'en', 'title': 'TestBbb'}],
+            is_active=True,
         )
         self.tenant_ccc = Tenant.objects.create(
             owner=self.user_bbb,
-            translatable_content=[{'language': 'en', 'title': 'TestCcc'}]
+            translatable_content=[{'language': 'en', 'title': 'TestCcc'}],
+            is_active=True,
         )
 
         TenantAdmin.objects.create(
@@ -249,7 +252,8 @@ class TenantItemsViewSetTestCase(TestCase):
                     'content': 'Test'
                 }],
                 'parent_items': [{
-                    'parent': 2,
+                    'parent_id': 2,
+                    'child_id': 1,
                     'label': 'Label'
                 }]
             },
@@ -273,7 +277,8 @@ class TenantItemsViewSetTestCase(TestCase):
                 }],
                 'parent_items': [{
                     'id': 1,
-                    'parent': 2,
+                    'parent_id': 2,
+                    'child_id': 1,
                     'label': 'Label2'
                 }]
             },
@@ -310,7 +315,7 @@ class TenantItemsViewSetTestCase(TestCase):
             0
         )
 
-    def test_item_relations_update(self):
+    def test_item_relations_creation_new_item_with_new_relations(self):
 
         self.client.post(
             f'/api/tenants/{self.tenant.id}/items/',
@@ -338,15 +343,15 @@ class TenantItemsViewSetTestCase(TestCase):
                 }],
                 'parent_items': [
                     {
-                        'parent': 1,
+                        'parent_id': 1,
                         'label': 'a'
                     },
                     {
-                        'parent': 1,
+                        'parent_id': 1,
                         'label': 'b'
                     },
                     {
-                        'parent': 1,
+                        'parent_id': 1,
                         'label': 'c'
                     },
                 ]
@@ -357,4 +362,76 @@ class TenantItemsViewSetTestCase(TestCase):
         self.assertEquals(
             ItemRelation.objects.all().count(),
             3
+        )
+
+        self.client.patch(
+            f'/api/tenants/{self.tenant.id}/items/2/',
+            {
+                'item_type': 'flat-page',
+                'tenant': self.tenant.id,
+                'translatable_content': [{
+                    'language': 'en',
+                    'title': 'Test_Bbb',
+                    'content': 'Test_Bbb'
+                }],
+                'parent_items': []
+            },
+            format='json'
+        )
+
+        self.assertEquals(
+            ItemRelation.objects.all().count(),
+            0
+        )
+
+    def test_item_relations_creation_with_wrong_child(self):
+
+        self.client.post(
+            f'/api/tenants/{self.tenant.id}/items/',
+            {
+                'item_type': 'flat-page',
+                'tenant': self.tenant.id,
+                'translatable_content': [{
+                    'language': 'en',
+                    'title': 'Test',
+                    'content': 'Test'
+                }],
+            },
+            format='json'
+        )
+
+        request = self.client.post(
+            f'/api/tenants/{self.tenant.id}/items/',
+            {
+                'item_type': 'flat-page',
+                'tenant': self.tenant.id,
+                'translatable_content': [{
+                    'language': 'en',
+                    'title': 'Test_Bbb',
+                    'content': 'Test_Bbb'
+                }],
+                'parent_items': [
+                    {
+                        'parent_id': 1,
+                        'child_id': 1,
+                        'label': 'a'
+                    },
+                    {
+                        'parent_id': 1,
+                        'child_id': 1,
+                        'label': 'b'
+                    },
+                    {
+                        'parent_id': 1,
+                        'child_id': 1,
+                        'label': 'c'
+                    },
+                ]
+            },
+            format='json'
+        )
+
+        self.assertEquals(
+            request.status_code,
+            400
         )

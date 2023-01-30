@@ -10,6 +10,9 @@ from drf_yasg import openapi
 
 from .viewsets.public_items import PublicItemsViewSet
 from .viewsets.tenant_admins import TenantAdminsViewSet
+from .viewsets.tenant_items_item_relations import (
+    TenantItemItemRelationsViewSet
+)
 from .viewsets.tenant_items import TenantItemsViewSet
 from .viewsets.tenants import TenantsViewSet
 from .viewsets.users import UsersViewSet
@@ -38,6 +41,17 @@ tenant_router = routers.NestedSimpleRouter(router, r'tenants', lookup='tenant')
 tenant_router.register(r'items', TenantItemsViewSet, basename='items')
 tenant_router.register(r'admins', TenantAdminsViewSet, basename='admins')
 
+items_router = routers.NestedSimpleRouter(
+    tenant_router,
+    r'items',
+    lookup='item'
+)
+items_router.register(
+    r'relations',
+    TenantItemItemRelationsViewSet,
+    basename='relations'
+)
+
 
 urlpatterns = [
     re_path(
@@ -62,5 +76,9 @@ urlpatterns = [
     path(
         'api/',
         include(tenant_router.urls)
+    ),
+    path(
+        'api/',
+        include(items_router.urls)
     ),
 ]
