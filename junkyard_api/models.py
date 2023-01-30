@@ -122,7 +122,7 @@ class Tenant(models.Model):
 
     @staticmethod
     def get_all_children(
-        instance: models.Model
+        instance: Union[int, str, models.Model]
     ) -> QuerySet:
 
         """
@@ -137,7 +137,14 @@ class Tenant(models.Model):
 
         """
 
-        # Query count will increase with children count, n+1 problem
+        # XXXX: Perf
+        # N+1 query problem
+
+        if type(instance) in [int, str]:
+            try:
+                instance = Tenant.objects.get(pk=instance)
+            except Tenant.DoesNotExist:
+                return Tenant.objects.none()
 
         children = instance.children.all().only('id')
 
@@ -148,7 +155,7 @@ class Tenant(models.Model):
 
     @staticmethod
     def get_all_children_ids(
-        instance: models.Model
+        instance: Union[int, str, models.Model]
     ) -> List[int]:
 
         """
@@ -165,10 +172,25 @@ class Tenant(models.Model):
 
         """
 
-        cache_key = f'models.Tenant.get_all_children_ids__{instance.id}'
+        id = instance
+        if type(instance) == Tenant:
+            id = instance.id
+
+        cache_key = f'models.Tenant.get_all_children_ids__{id}'
         cached_data = cache.get(cache_key)
         if cached_data is not None:
             return cached_data
+
+        if type(instance) in [int, str]:
+            try:
+                instance = Tenant.objects.get(pk=instance)
+            except Tenant.DoesNotExist:
+                cache.set(
+                    cache_key,
+                    [],
+                    Tenant.CACHE_TIMEOUT_GET_ALL_CHILDREN_IDS
+                )
+                return []
 
         queryset = Tenant.get_all_children(
             instance
@@ -189,7 +211,7 @@ class Tenant(models.Model):
 
     @staticmethod
     def get_all_parents(
-        instance: models.Model
+        instance: Union[int, str, models.Model]
     ) -> QuerySet:
 
         """
@@ -204,6 +226,15 @@ class Tenant(models.Model):
 
         """
 
+        # XXXX: Perf
+        # N+1 query problem
+
+        if type(instance) in [int, str]:
+            try:
+                instance = Tenant.objects.get(pk=instance)
+            except Tenant.DoesNotExist:
+                return Tenant.objects.none()
+
         parent = instance.parent
         if parent is None:
             return Tenant.objects.none()
@@ -216,7 +247,7 @@ class Tenant(models.Model):
 
     @staticmethod
     def get_all_parents_ids(
-        instance: models.Model
+        instance: Union[int, str, models.Model]
     ) -> List[int]:
 
         """
@@ -233,10 +264,25 @@ class Tenant(models.Model):
 
         """
 
-        cache_key = f'models.Tenant.get_all_parents_ids__{instance.id}'
+        id = instance
+        if type(instance) == Tenant:
+            id = instance.id
+
+        cache_key = f'models.Tenant.get_all_parents_ids__{id}'
         cached_data = cache.get(cache_key)
         if cached_data is not None:
             return cached_data
+
+        if type(instance) in [int, str]:
+            try:
+                instance = Tenant.objects.get(pk=instance)
+            except Tenant.DoesNotExist:
+                cache.set(
+                    cache_key,
+                    [],
+                    Tenant.CACHE_TIMEOUT_GET_ALL_PARENTS_IDS
+                )
+                return []
 
         queryset = Tenant.get_all_parents(
             instance

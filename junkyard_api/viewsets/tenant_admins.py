@@ -29,7 +29,7 @@ class TenantAdminsViewSet(
 ):
 
     filter_backends: Final = (filters.DjangoFilterBackend, )
-    filterset_class = TenantAdminsFilterSet
+    filterset_class: Final = TenantAdminsFilterSet
     model: Final = TenantAdmin
     ordering_fields = ('-id', )
     pagination_class: Final = JunkyardApiPagination
