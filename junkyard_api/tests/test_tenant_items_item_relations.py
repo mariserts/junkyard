@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
+from django.test import TestCase
+
 from .test_base import BaseTestCase
 
 
 class TenantItemItemRelationsViewSetTestCase(BaseTestCase):
 
-    def test_unauthenticated_list(self):
+    def test_unauthenticated_list(
+        self: TestCase,
+    ) -> None:
 
         url = f'/api/tenants/{self.tenant_aaa.id}/'
         url += f'items/{self.item_aaa.id}/relations/'
@@ -19,7 +23,9 @@ class TenantItemItemRelationsViewSetTestCase(BaseTestCase):
             401
         )
 
-    def test_unauthenticated_retrieve(self):
+    def test_unauthenticated_retrieve(
+        self: TestCase,
+    ) -> None:
 
         url = f'/api/tenants/{self.tenant_aaa.id}/'
         url += f'items/{self.item_aaa.id}/relations/{self.relation_aaa.id}/'
@@ -34,14 +40,14 @@ class TenantItemItemRelationsViewSetTestCase(BaseTestCase):
             401
         )
 
-    def test_authenticated_list(self):
+    def test_authenticated_list(
+        self: TestCase,
+    ) -> None:
 
         url = f'/api/tenants/{self.tenant_aaa.id}/'
         url += f'items/{self.item_aaa.id}/relations/'
 
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f'Bearer {self.token_aaa.token}'
-        )
+        self.authenticate_with_token(self.token_aaa)
 
         request = self.client.get(
             url,
@@ -53,14 +59,14 @@ class TenantItemItemRelationsViewSetTestCase(BaseTestCase):
             200
         )
 
-    def test_authenticated_retrieve(self):
+    def test_authenticated_retrieve(
+        self: TestCase,
+    ) -> None:
 
         url = f'/api/tenants/{self.tenant_aaa.id}/'
         url += f'items/{self.item_aaa.id}/relations/{self.relation_aaa.id}/'
 
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f'Bearer {self.token_aaa.token}'
-        )
+        self.authenticate_with_token(self.token_aaa)
 
         request = self.client.get(
             url,
@@ -72,14 +78,14 @@ class TenantItemItemRelationsViewSetTestCase(BaseTestCase):
             200
         )
 
-    def test_authenticated_retrieve_not_found(self):
+    def test_authenticated_retrieve_not_found(
+        self: TestCase,
+    ) -> None:
 
         url = f'/api/tenants/{self.tenant_aaa.id}/'
         url += f'items/{self.item_aaa.id}/relations/1000/'
 
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f'Bearer {self.token_aaa.token}'
-        )
+        self.authenticate_with_token(self.token_aaa)
 
         request = self.client.get(
             url,

@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
+from django.test import TestCase
+
 from .test_base import BaseTestCase
 
 
 class UsersViewSetTestCase(BaseTestCase):
 
-    def test_unauthenticated_list(self):
+    def test_unauthenticated_list(
+        self: TestCase,
+    ) -> None:
 
         request = self.client.get(
             '/api/users/',
@@ -16,7 +20,9 @@ class UsersViewSetTestCase(BaseTestCase):
             401
         )
 
-    def test_unauthenticated_retrieve(self):
+    def test_unauthenticated_retrieve(
+        self: TestCase,
+    ) -> None:
 
         url = f'/api/users/{self.user_aaa.id}/'
 
@@ -30,11 +36,11 @@ class UsersViewSetTestCase(BaseTestCase):
             401
         )
 
-    def test_authenticated_list(self):
+    def test_authenticated_list(
+        self: TestCase,
+    ) -> None:
 
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f'Bearer {self.token_aaa.token}'
-        )
+        self.authenticate_with_token(self.token_aaa)
 
         request = self.client.get(
             '/api/users/',
@@ -46,13 +52,13 @@ class UsersViewSetTestCase(BaseTestCase):
             200
         )
 
-    def test_authenticated_retrieve(self):
+    def test_authenticated_retrieve(
+        self: TestCase,
+    ) -> None:
 
         url = f'/api/users/{self.user_aaa.id}/'
 
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f'Bearer {self.token_aaa.token}'
-        )
+        self.authenticate_with_token(self.token_aaa)
 
         request = self.client.get(
             url,
@@ -64,13 +70,13 @@ class UsersViewSetTestCase(BaseTestCase):
             200
         )
 
-    def test_authenticated_list_filters(self):
+    def test_authenticated_list_filters(
+        self: TestCase,
+    ) -> None:
 
         url = '/api/users/'
 
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f'Bearer {self.token_aaa.token}'
-        )
+        self.authenticate_with_token(self.token_aaa)
 
         request = self.client.get(
             url + f'?email={self.user_aaa.email}',

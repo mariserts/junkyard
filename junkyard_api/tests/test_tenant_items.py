@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
+from django.test import TestCase
+
 from .test_base import BaseTestCase
 
 
 class TenantItemsViewSetTestCase(BaseTestCase):
 
-    def test_unauthenticated_list(self):
+    def test_unauthenticated_list(
+        self: TestCase,
+    ) -> None:
 
         url = f'/api/tenants/{self.tenant_aaa.id}/items/'
 
@@ -18,7 +22,9 @@ class TenantItemsViewSetTestCase(BaseTestCase):
             401
         )
 
-    def test_unauthenticated_retrieve(self):
+    def test_unauthenticated_retrieve(
+        self: TestCase,
+    ) -> None:
 
         url = f'/api/tenants/{self.tenant_aaa.id}/items/{self.item_aaa.id}/'
 
@@ -32,13 +38,13 @@ class TenantItemsViewSetTestCase(BaseTestCase):
             401
         )
 
-    def test_authenticated_list(self):
+    def test_authenticated_list(
+        self: TestCase,
+    ) -> None:
 
         url = f'/api/tenants/{self.tenant_aaa.id}/items/'
 
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f'Bearer {self.token_aaa.token}'
-        )
+        self.authenticate_with_token(self.token_aaa)
 
         request = self.client.get(
             url,
@@ -50,13 +56,13 @@ class TenantItemsViewSetTestCase(BaseTestCase):
             200
         )
 
-    def test_authenticated_retrieve(self):
+    def test_authenticated_retrieve(
+        self: TestCase,
+    ) -> None:
 
         url = f'/api/tenants/{self.tenant_aaa.id}/items/{self.item_aaa.id}/'
 
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f'Bearer {self.token_aaa.token}'
-        )
+        self.authenticate_with_token(self.token_aaa)
 
         request = self.client.get(
             url,
@@ -68,13 +74,13 @@ class TenantItemsViewSetTestCase(BaseTestCase):
             200
         )
 
-    def test_authenticated_list_filters(self):
+    def test_authenticated_list_filters(
+        self: TestCase,
+    ) -> None:
 
         url = f'/api/tenants/{self.tenant_aaa.id}/items/'
 
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f'Bearer {self.token_aaa.token}'
-        )
+        self.authenticate_with_token(self.token_aaa)
 
         request = self.client.get(
             url,
@@ -126,13 +132,13 @@ class TenantItemsViewSetTestCase(BaseTestCase):
             200
         )
 
-    def test_authenticated_create_flat_page(self):
+    def test_authenticated_create_flat_page(
+        self: TestCase,
+    ) -> None:
 
         url = f'/api/tenants/{self.tenant_aaa.id}/items/'
 
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f'Bearer {self.token_aaa.token}'
-        )
+        self.authenticate_with_token(self.token_aaa)
 
         request = self.client.post(
             url,
@@ -157,13 +163,13 @@ class TenantItemsViewSetTestCase(BaseTestCase):
             201
         )
 
-    def test_authenticated_create_and_update_flat_page(self):
+    def test_authenticated_create_and_update_flat_page(
+        self: TestCase,
+    ) -> None:
 
         url = f'/api/tenants/{self.tenant_aaa.id}/items/'
 
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f'Bearer {self.token_aaa.token}'
-        )
+        self.authenticate_with_token(self.token_aaa)
 
         request = self.client.post(
             url,
@@ -222,13 +228,13 @@ class TenantItemsViewSetTestCase(BaseTestCase):
             0
         )
 
-    def test_authenticated_create_inaccessible_item_type(self):
+    def test_authenticated_create_inaccessible_item_type(
+        self: TestCase,
+    ) -> None:
 
         url = f'/api/tenants/{self.tenant_aaa.id}/items/'
 
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f'Bearer {self.token_aaa.token}'
-        )
+        self.authenticate_with_token(self.token_aaa)
 
         request = self.client.post(
             url,
@@ -249,13 +255,13 @@ class TenantItemsViewSetTestCase(BaseTestCase):
             400
         )
 
-    def test_authenticated_create_and_update_change_tenant(self):
+    def test_authenticated_create_and_update_change_tenant(
+        self: TestCase,
+    ) -> None:
 
         url = f'/api/tenants/{self.tenant_aaa.id}/items/'
 
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f'Bearer {self.token_aaa.token}'
-        )
+        self.authenticate_with_token(self.token_aaa)
 
         request = self.client.post(
             url,
@@ -295,13 +301,13 @@ class TenantItemsViewSetTestCase(BaseTestCase):
             400
         )
 
-    def test_authenticated_create_and_destroy(self):
+    def test_authenticated_create_and_destroy(
+        self: TestCase,
+    ) -> None:
 
         url = f'/api/tenants/{self.tenant_aaa.id}/items/'
 
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f'Bearer {self.token_aaa.token}'
-        )
+        self.authenticate_with_token(self.token_aaa)
 
         request = self.client.post(
             url,
