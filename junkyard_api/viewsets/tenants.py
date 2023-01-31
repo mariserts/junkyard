@@ -16,11 +16,11 @@ from .base import BaseViewSet
 
 
 class TenantsViewSet(
-    mixins.CreateModelMixin,
-    mixins.DestroyModelMixin,
+    # mixins.CreateModelMixin,
+    # mixins.DestroyModelMixin,
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
-    mixins.UpdateModelMixin,
+    # mixins.UpdateModelMixin,
     BaseViewSet
 ):
 

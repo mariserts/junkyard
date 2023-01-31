@@ -41,9 +41,6 @@ class User(AbstractUser):
 
     def save(self, *args, **kwargs):
 
-        if self.email in [None, '', ' ']:
-            raise ValidationError('Email is required')
-
         self.email = self.email.lower()
         self.username = self.email
 
@@ -55,9 +52,6 @@ class User(AbstractUser):
             client_type=Application.CLIENT_PUBLIC,
             authorization_grant_type=Application.GRANT_CLIENT_CREDENTIALS
         )
-
-    def __str__(self):
-        return self.email
 
 
 class Tenant(models.Model):
