@@ -1,5 +1,11 @@
 .venv
+
 __pycache__
+
 db.sqlite3
+
+coverage_report/d_*
+!coverage_report/index.html
+
 */migrations/*
 !*/migrations/__init__.py

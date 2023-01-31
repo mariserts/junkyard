@@ -1,0 +1,9 @@
+[html]
+directory = coverage_report
+
+[run]
+omit =
+    demo/*
+    manage.py
+    */migrations/*
+    */tests/*

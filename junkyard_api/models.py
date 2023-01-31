@@ -8,10 +8,26 @@ from django.db import models
 from django.db.models import Q
 from django.db.models.query import QuerySet
 
+from oauth2_provider.models import AbstractApplication
+
 from . import managers
 from .conf import settings
 from .exceptions import ItemTypeNotFoundException, NoItemTypeAccessException
 from .item_types.registry_entry import RegistryEntry
+
+
+class Application(AbstractApplication):
+
+    raw_client_secret = models.CharField(
+        max_length=255,
+        blank=True,
+    )
+
+    def save(self, *args, **kwargs):
+        creation = self.id is None
+        if creation is True:
+            self.raw_client_secret = self.client_secret
+        super().save(*args, **kwargs)
 
 
 class User(AbstractUser):
@@ -32,6 +48,13 @@ class User(AbstractUser):
         self.username = self.email
 
         super(User, self).save(*args, **kwargs)
+
+        Application.objects.create(
+            user=self,
+            name=self.email,
+            client_type=Application.CLIENT_PUBLIC,
+            authorization_grant_type=Application.GRANT_CLIENT_CREDENTIALS
+        )
 
     def __str__(self):
         return self.email
@@ -155,7 +178,8 @@ class Tenant(models.Model):
 
     @staticmethod
     def get_all_children_ids(
-        instance: Union[int, str, models.Model]
+        instance: Union[int, str, models.Model],
+        use_cache: bool = True,
     ) -> List[int]:
 
         """
@@ -166,30 +190,33 @@ class Tenant(models.Model):
 
         Attrs:
         - instance: Tenant - instance of tenant
+        - use_cache: bool - determine if cache results
 
         Returns:
         - List[int] - list of children ids
 
         """
 
-        id = instance
-        if type(instance) == Tenant:
-            id = instance.id
+        if use_cache is True:
+            id = instance
+            if type(instance) == Tenant:
+                id = instance.id
 
-        cache_key = f'models.Tenant.get_all_children_ids__{id}'
-        cached_data = cache.get(cache_key)
-        if cached_data is not None:
-            return cached_data
+            cache_key = f'models.Tenant.get_all_children_ids__{id}'
+            cached_data = cache.get(cache_key)
+            if cached_data is not None:
+                return cached_data
 
         if type(instance) in [int, str]:
             try:
                 instance = Tenant.objects.get(pk=instance)
             except Tenant.DoesNotExist:
-                cache.set(
-                    cache_key,
-                    [],
-                    Tenant.CACHE_TIMEOUT_GET_ALL_CHILDREN_IDS
-                )
+                if use_cache is True:
+                    cache.set(
+                        cache_key,
+                        [],
+                        Tenant.CACHE_TIMEOUT_GET_ALL_CHILDREN_IDS
+                    )
                 return []
 
         queryset = Tenant.get_all_children(
@@ -201,11 +228,12 @@ class Tenant(models.Model):
 
         ids = list(set(list(queryset)))
 
-        cache.set(
-            cache_key,
-            ids,
-            Tenant.CACHE_TIMEOUT_GET_ALL_CHILDREN_IDS
-        )
+        if use_cache is True:
+            cache.set(
+                cache_key,
+                ids,
+                Tenant.CACHE_TIMEOUT_GET_ALL_CHILDREN_IDS
+            )
 
         return ids
 
@@ -247,7 +275,8 @@ class Tenant(models.Model):
 
     @staticmethod
     def get_all_parents_ids(
-        instance: Union[int, str, models.Model]
+        instance: Union[int, str, models.Model],
+        use_cache: bool = True,
     ) -> List[int]:
 
         """
@@ -258,15 +287,17 @@ class Tenant(models.Model):
 
         Attrs:
         - instance: Tenant - instance of tenant
+        - use_cache: bool - determine if cache results
 
         Returns:
         - List[int] - list of parent ids
 
         """
 
-        id = instance
-        if type(instance) == Tenant:
-            id = instance.id
+        if use_cache is True:
+            id = instance
+            if type(instance) == Tenant:
+                id = instance.id
 
         cache_key = f'models.Tenant.get_all_parents_ids__{id}'
         cached_data = cache.get(cache_key)
@@ -277,11 +308,12 @@ class Tenant(models.Model):
             try:
                 instance = Tenant.objects.get(pk=instance)
             except Tenant.DoesNotExist:
-                cache.set(
-                    cache_key,
-                    [],
-                    Tenant.CACHE_TIMEOUT_GET_ALL_PARENTS_IDS
-                )
+                if use_cache is True:
+                    cache.set(
+                        cache_key,
+                        [],
+                        Tenant.CACHE_TIMEOUT_GET_ALL_PARENTS_IDS
+                    )
                 return []
 
         queryset = Tenant.get_all_parents(
@@ -293,11 +325,12 @@ class Tenant(models.Model):
 
         ids = list(set(list(queryset)))
 
-        cache.set(
-            cache_key,
-            ids,
-            Tenant.CACHE_TIMEOUT_GET_ALL_PARENTS_IDS
-        )
+        if use_cache is True:
+            cache.set(
+                cache_key,
+                ids,
+                Tenant.CACHE_TIMEOUT_GET_ALL_PARENTS_IDS
+            )
 
         return ids
 

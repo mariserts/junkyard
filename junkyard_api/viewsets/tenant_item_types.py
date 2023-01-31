@@ -1,33 +1,32 @@
 # -*- coding: utf-8 -*-
 from typing import Final, Union
 
-from rest_framework import viewsets
 from rest_framework.request import Request
 from rest_framework.response import Response
 
 from ..exceptions import ItemTypeNotFoundException, NoItemTypeAccessException
 from ..mixins import ViewSetKwargsMixin
 from ..models import Tenant
-from ..permissions import AuthenticatedUserPermission, TenantUserPermission
+from ..permissions import TenantUserPermission
 from ..serializers.item_types import ItemTypeSerializer
+
+from .base import BaseViewSet
 
 
 class TenantItemTypesViewSet(
     ViewSetKwargsMixin,
-    viewsets.GenericViewSet
+    BaseViewSet
 ):
 
     CACHE_TIMEOUT_IS_ROOT_TENANT = 5
     CACHE_TIMEOUT_LIST = 5
 
-    permission_classes: Final = (
-        AuthenticatedUserPermission,
-        TenantUserPermission,
-    )
+    permission_classes: Final = BaseViewSet.permission_classes + [
+        TenantUserPermission, ]
     serializer_class: Final = ItemTypeSerializer
 
     def list(
-        self: viewsets.GenericViewSet,
+        self: BaseViewSet,
         request: Request,
         tenant_pk: int
     ) -> Response:
@@ -46,7 +45,7 @@ class TenantItemTypesViewSet(
         return Response(data)
 
     def retrieve(
-        self: viewsets.GenericViewSet,
+        self: BaseViewSet,
         request: Request,
         tenant_pk: int,
         pk: Union[None, int]

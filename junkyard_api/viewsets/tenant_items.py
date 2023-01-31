@@ -4,20 +4,16 @@ from typing import Final
 from django.db.models import Q
 from django.db.models.query import QuerySet
 
-from rest_framework import mixins, viewsets
+from rest_framework import mixins
 from rest_framework.exceptions import ValidationError
-
-from django_filters import rest_framework as filters
 
 from ..filtersets.items import ItemsFilterSet
 from ..mixins import ViewSetKwargsMixin, ViewSetPayloadMixin
 from ..models import Item
-from ..pagination import JunkyardApiPagination
-from ..permissions import (
-    AuthenticatedUserPermission,
-    TenantUserPermission,
-)
+from ..permissions import TenantUserPermission
 from ..serializers.items import ItemSerializer
+
+from .base import BaseViewSet
 
 
 class TenantItemsViewSet(
@@ -28,23 +24,18 @@ class TenantItemsViewSet(
     mixins.UpdateModelMixin,
     ViewSetKwargsMixin,
     ViewSetPayloadMixin,
-    viewsets.GenericViewSet
+    BaseViewSet
 ):
 
-    filter_backends: Final = (filters.DjangoFilterBackend, )
     filterset_class: Final = ItemsFilterSet
-    model: Final = Item
     ordering_fields: Final = ('-id', )
-    pagination_class: Final = JunkyardApiPagination
-    permission_classes: Final = [
-        AuthenticatedUserPermission,
-        TenantUserPermission,
-    ]
-    queryset: Final = model.objects.all()
+    permission_classes: Final = BaseViewSet.permission_classes + [
+        TenantUserPermission, ]
+    queryset: Final = Item.objects.all()
     serializer_class: Final = ItemSerializer
 
     def get_queryset(
-        self: viewsets.GenericViewSet,
+        self: BaseViewSet,
     ) -> QuerySet:
 
         tenant_pk = self.get_kwarg_tenant_pk()

@@ -3,16 +3,14 @@ from typing import Final
 
 from django.db.models.query import QuerySet
 
-from rest_framework import mixins, viewsets
+from rest_framework import mixins
 
 from ..mixins import ViewSetKwargsMixin
 from ..models import ItemRelation
-from ..pagination import JunkyardApiPagination
-from ..permissions import (
-    AuthenticatedUserPermission,
-    TenantUserPermission,
-)
+from ..permissions import TenantUserPermission
 from ..serializers.item_relations import ItemRelationSerializer
+
+from .base import BaseViewSet
 
 
 class TenantItemItemRelationsViewSet(
@@ -22,21 +20,17 @@ class TenantItemItemRelationsViewSet(
     mixins.RetrieveModelMixin,
     mixins.UpdateModelMixin,
     ViewSetKwargsMixin,
-    viewsets.GenericViewSet
+    BaseViewSet
 ):
 
-    model: Final = ItemRelation
     ordering_fields: Final = ('id', )
-    pagination_class: Final = JunkyardApiPagination
-    permission_classes: Final = [
-        AuthenticatedUserPermission,
-        TenantUserPermission,
-    ]
-    queryset: Final = model.objects.all()
+    permission_classes: Final = BaseViewSet.permission_classes + [
+        TenantUserPermission, ]
+    queryset: Final = ItemRelation.objects.all()
     serializer_class: Final = ItemRelationSerializer
 
     def get_queryset(
-        self: viewsets.GenericViewSet,
+        self: BaseViewSet,
     ) -> QuerySet:
 
         tenant_pk = self.get_kwarg_tenant_pk()

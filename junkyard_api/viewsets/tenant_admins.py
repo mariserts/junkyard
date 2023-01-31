@@ -4,18 +4,17 @@ from typing import Final
 from django.db.models import Q
 from django.db.models.query import QuerySet
 
-from rest_framework import mixins, viewsets
+from rest_framework import mixins
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
-
-from django_filters import rest_framework as filters
 
 from ..filtersets.tenant_admins import TenantAdminsFilterSet
 from ..mixins import ViewSetKwargsMixin
 from ..models import TenantAdmin
-from ..pagination import JunkyardApiPagination
-from ..permissions import AuthenticatedUserPermission, TenantUserPermission
+from ..permissions import TenantUserPermission
 from ..serializers.tenant_admins import TenantAdminSerializer
+
+from .base import BaseViewSet
 
 
 class TenantAdminsViewSet(
@@ -25,23 +24,18 @@ class TenantAdminsViewSet(
     mixins.RetrieveModelMixin,
     mixins.UpdateModelMixin,
     ViewSetKwargsMixin,
-    viewsets.GenericViewSet
+    BaseViewSet
 ):
 
-    filter_backends: Final = (filters.DjangoFilterBackend, )
     filterset_class: Final = TenantAdminsFilterSet
-    model: Final = TenantAdmin
     ordering_fields = ('-id', )
-    pagination_class: Final = JunkyardApiPagination
-    permission_classes: Final = [
-        AuthenticatedUserPermission,
-        TenantUserPermission,
-    ]
-    queryset: Final = model.objects.all()
+    permission_classes: Final = BaseViewSet.permission_classes + [
+        TenantUserPermission, ]
+    queryset: Final = TenantAdmin.objects.all()
     serializer_class: Final = TenantAdminSerializer
 
     def get_queryset(
-        self: viewsets.GenericViewSet,
+        self: BaseViewSet,
     ) -> QuerySet:
 
         tenant_pk = self.kwargs.get('tenant_pk', None)

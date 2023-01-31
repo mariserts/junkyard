@@ -5,32 +5,30 @@ from typing import Final
 
 from django.db.models.query import QuerySet
 
-from rest_framework import mixins, viewsets
-
-from django_filters import rest_framework as filters
+from rest_framework import mixins
 
 from ..filtersets.items import ItemsFilterSet
 from ..models import Item
-from ..pagination import JunkyardApiPagination
+from ..permissions import ReadOnlyPermission
 from ..serializers.items import ItemSerializer
+
+from .base import BaseViewSet
 
 
 class PublicItemsViewSet(
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
-    viewsets.GenericViewSet
+    BaseViewSet
 ):
 
-    filter_backends: Final = (filters.DjangoFilterBackend, )
     filterset_class: Final = ItemsFilterSet
-    model: Final = Item
     ordering_fields = ['-published_at']
-    pagination_class: Final = JunkyardApiPagination
-    queryset: Final = model.objects.all()
+    permission_classes = [ReadOnlyPermission, ]
+    queryset: Final = Item.objects.all()
     serializer_class: Final = ItemSerializer
 
     def get_queryset(
-        self: viewsets.GenericViewSet,
+        self: BaseViewSet,
     ) -> QuerySet:
 
         # Item is published

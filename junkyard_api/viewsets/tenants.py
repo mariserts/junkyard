@@ -4,16 +4,15 @@ from typing import Final
 from django.db.models import Q
 from django.db.models.query import QuerySet
 
-from rest_framework import mixins, viewsets
-
-from django_filters import rest_framework as filters
+from rest_framework import mixins
 
 from ..conf import settings
 from ..filtersets.tenants import TenantsFilterSet
 from ..models import Tenant
-from ..pagination import JunkyardApiPagination
-from ..permissions import AuthenticatedUserPermission, TenantUserPermission
+from ..permissions import TenantUserPermission
 from ..serializers.tenants import TenantSerializer
+
+from .base import BaseViewSet
 
 
 class TenantsViewSet(
@@ -22,23 +21,18 @@ class TenantsViewSet(
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
     mixins.UpdateModelMixin,
-    viewsets.GenericViewSet
+    BaseViewSet
 ):
 
-    filter_backends: Final = (filters.DjangoFilterBackend, )
     filterset_class: Final = TenantsFilterSet
-    model: Final = Tenant
     ordering_fields: Final = ('id', )
-    pagination_class: Final = JunkyardApiPagination
-    permission_classes: Final = (
-        AuthenticatedUserPermission,
-        TenantUserPermission,
-    )
-    queryset: Final = model.objects.all()
+    permission_classes: Final = BaseViewSet.permission_classes + [
+        TenantUserPermission, ]
+    queryset: Final = Tenant.objects.all()
     serializer_class: Final = TenantSerializer
 
     def get_queryset(
-        self: viewsets.GenericViewSet,
+        self: BaseViewSet,
     ) -> QuerySet:
 
         """
