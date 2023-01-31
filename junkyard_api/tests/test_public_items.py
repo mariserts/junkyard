@@ -38,6 +38,19 @@ class PublicItemsViewSetTestCase(BaseTestCase):
             404
         )
 
+    def test_creation(self):
+
+        request = self.client.post(
+            '/api/public-items/',
+            {},
+            format='json'
+        )
+
+        self.assertEquals(
+            request.status_code,
+            401
+        )
+
     def test_retrieve_not_found_published_no_published_at(self):
 
         request = self.client.get(
