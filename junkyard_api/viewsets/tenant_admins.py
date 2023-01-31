@@ -6,7 +6,6 @@ from django.db.models.query import QuerySet
 
 from rest_framework import mixins
 from rest_framework.exceptions import ValidationError
-from rest_framework.response import Response
 
 from ..filtersets.tenant_admins import TenantAdminsFilterSet
 from ..mixins import ViewSetKwargsMixin
@@ -65,12 +64,8 @@ class TenantAdminsViewSet(
 
     def update(self, request, *args, **kwargs):
 
-        try:
-            request_data_tenant_pk = request.data['tenant']
-        except KeyError:
-            return Response('"tenant" is not provided')
-
         tenant_pk = self.get_kwarg_tenant_pk()
+        request_data_tenant_pk = request.data.get('tenant', tenant_pk)
 
         if str(request_data_tenant_pk) != str(tenant_pk):
             raise ValidationError({
@@ -81,12 +76,8 @@ class TenantAdminsViewSet(
 
     def create(self, request, *args, **kwargs):
 
-        try:
-            request_data_tenant_pk = request.data['tenant']
-        except KeyError:
-            return Response('"tenant" is not provided')
-
         tenant_pk = self.get_kwarg_tenant_pk()
+        request_data_tenant_pk = request.data.get('tenant', tenant_pk)
 
         if str(request_data_tenant_pk) != str(tenant_pk):
             raise ValidationError({
