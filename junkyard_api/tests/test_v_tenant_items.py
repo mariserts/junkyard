@@ -10,10 +10,10 @@ class TenantItemsViewSetTestCase(TestCase):
 
     def setUp(self):
         self.user = User.objects.create(
-            email='TenantItemsViewSetTestCase@test.com'
+            email='TenantItemsViewSetTestCase@test.case'
         )
         self.user_bbb = User.objects.create(
-            email='TenantItemsViewSetTestBbbCase@test.com'
+            email='TenantItemsViewSetTestBbbCase@test.case'
         )
         self.tenant = Tenant.objects.create(
             owner=self.user,

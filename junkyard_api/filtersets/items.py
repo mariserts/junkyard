@@ -33,9 +33,6 @@ class ItemsFilterSet(FilterSet):
 
         allowed_types = settings.ITEM_TYPE_REGISTRY.get_types(format='names')
 
-        if len(value) == 0:
-            return queryset
-
         item_types = list(set(allowed_types).intersection(set(value)))
 
         count = len(item_types)
