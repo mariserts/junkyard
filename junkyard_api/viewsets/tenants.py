@@ -20,7 +20,7 @@ class TenantsViewSet(
     # mixins.DestroyModelMixin,
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
-    # mixins.UpdateModelMixin,
+    mixins.UpdateModelMixin,
     BaseViewSet
 ):
 
@@ -46,8 +46,6 @@ class TenantsViewSet(
 
         user_id = self.request.user.id
         cascade = settings.CASCADE_TENANT_PERMISSIONS
-
-        # Has access to all child tenants if cascade is True
 
         condition = Q()
         condition.add(Q(owner_id=user_id), Q.OR)

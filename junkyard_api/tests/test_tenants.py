@@ -8,7 +8,9 @@ from .test_base import BaseTestCase
 
 class TenantsViewSetTestCase(BaseTestCase):
 
-    def test_unauthenticated_list(self):
+    def test_unauthenticated_list(
+        self: TestCase,
+    ) -> None:
 
         request = self.client.get(
             '/api/tenants/',
@@ -20,7 +22,9 @@ class TenantsViewSetTestCase(BaseTestCase):
             401
         )
 
-    def test_unauthenticated_retrieve(self):
+    def test_unauthenticated_retrieve(
+        self: TestCase,
+    ) -> None:
 
         url = f'/api/tenants/{self.tenant_aaa.id}/'
 
@@ -34,13 +38,13 @@ class TenantsViewSetTestCase(BaseTestCase):
             401
         )
 
-    def test_authenticated_list(self):
+    def test_authenticated_list(
+        self: TestCase,
+    ) -> None:
 
         url = '/api/tenants/'
 
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f'Bearer {self.token_aaa.token}'
-        )
+        self.authenticate_with_token(self.token_aaa)
 
         request = self.client.get(
             url,
@@ -62,11 +66,11 @@ class TenantsViewSetTestCase(BaseTestCase):
             200
         )
 
-    def test_authenticated_retrieve(self):
+    def test_authenticated_retrieve(
+        self: TestCase,
+    ) -> None:
 
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f'Bearer {self.token_aaa.token}'
-        )
+        self.authenticate_with_token(self.token_aaa)
 
         url = f'/api/tenants/{self.tenant_aaa.id}/'
 
@@ -80,13 +84,13 @@ class TenantsViewSetTestCase(BaseTestCase):
             200
         )
 
-    def test_authenticated_list_filter_test(self):
+    def test_authenticated_list_filter_test(
+        self: TestCase,
+    ) -> None:
 
         url = '/api/tenants/'
 
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f'Bearer {self.token_aaa.token}'
-        )
+        self.authenticate_with_token(self.token_aaa)
 
         request = self.client.get(
             url + f'?predecessors_of={self.tenant_aaa.id}',
@@ -138,15 +142,15 @@ class TenantsViewSetTestCase(BaseTestCase):
             200
         )
 
-    def test_authenticated_retrieve_no_permission(self):
+    def test_authenticated_retrieve_no_permission(
+        self: TestCase,
+    ) -> None:
 
         """ UserAaa should not see TenantBbb (2) """
 
         url = f'/api/tenants/{self.tenant_bbb.id}/'
 
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f'Bearer {self.token_aaa.token}'
-        )
+        self.authenticate_with_token(self.token_aaa)
 
         request = self.client.get(
             url,
@@ -158,15 +162,15 @@ class TenantsViewSetTestCase(BaseTestCase):
             403
         )
 
-    def test_authenticated_retrieve_as_admin(self):
+    def test_authenticated_retrieve_as_admin(
+        self: TestCase,
+    ) -> None:
 
         """ UserBbb is admin for TenantAaa (1) """
 
         url = f'/api/tenants/{self.tenant_aaa.id}/'
 
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f'Bearer {self.token_bbb.token}'
-        )
+        self.authenticate_with_token(self.token_bbb)
 
         request = self.client.get(
             url,
@@ -178,10 +182,59 @@ class TenantsViewSetTestCase(BaseTestCase):
             200
         )
 
+    def test_authenticated_update(
+        self: TestCase,
+    ) -> None:
+
+        self.authenticate_with_token(self.token_aaa)
+
+        url = f'/api/tenants/{self.tenant_aaa.id}/'
+
+        request = self.client.patch(
+            url,
+            {
+                'parent': self.tenant_aaa.parent,
+                'translatable_content': [{
+                    'language': 'en',
+                    'title': 'Test Aaa Aaa'
+                }]
+            },
+            format='json'
+        )
+
+        self.assertEquals(
+            request.status_code,
+            200
+        )
+
+    def test_authenticated_update_no_translatable_content(
+        self: TestCase,
+    ) -> None:
+
+        self.authenticate_with_token(self.token_aaa)
+
+        url = f'/api/tenants/{self.tenant_aaa.id}/'
+
+        request = self.client.patch(
+            url,
+            {
+                'parent': self.tenant_aaa.parent,
+                'translatable_content': []
+            },
+            format='json'
+        )
+
+        self.assertEquals(
+            request.status_code,
+            400
+        )
+
 
 class TenantsHierarchyTestCase(TestCase):
 
-    def test_tenant_hierarchy(self):
+    def test_tenant_hierarchy(
+        self: TestCase,
+    ) -> None:
 
         user = User.objects.create(email='TenantsHierarchyTestCase@test.case')
 

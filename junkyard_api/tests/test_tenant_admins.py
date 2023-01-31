@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
+from django.test import TestCase
+
 from .test_base import BaseTestCase
 
 
 class TenantAdminViewSetTestCase(BaseTestCase):
 
-    def test_unauthenticated_list(self):
+    def test_unauthenticated_list(
+        self: TestCase,
+    ) -> None:
 
         request = self.client.get(
             f'/api/tenants/{self.tenant_aaa.id}/admins/',
@@ -16,7 +20,9 @@ class TenantAdminViewSetTestCase(BaseTestCase):
             401
         )
 
-    def test_unauthenticated_retrieve(self):
+    def test_unauthenticated_retrieve(
+        self: TestCase,
+    ) -> None:
 
         url = f'/api/tenants/{self.tenant_aaa.id}/'
         url += f'admins/{self.tenant_admin_aaa.id}/'
@@ -31,11 +37,11 @@ class TenantAdminViewSetTestCase(BaseTestCase):
             401
         )
 
-    def test_authenticated_list(self):
+    def test_authenticated_list(
+        self: TestCase,
+    ) -> None:
 
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f'Bearer {self.token_aaa.token}'
-        )
+        self.authenticate_with_token(self.token_aaa)
 
         request = self.client.get(
             f'/api/tenants/{self.tenant_aaa.id}/admins/',
@@ -47,14 +53,14 @@ class TenantAdminViewSetTestCase(BaseTestCase):
             200
         )
 
-    def test_authenticated_retrieve(self):
+    def test_authenticated_retrieve(
+        self: TestCase,
+    ) -> None:
 
         url = f'/api/tenants/{self.tenant_aaa.id}/'
         url += f'admins/{self.tenant_admin_aaa.id}/'
 
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f'Bearer {self.token_aaa.token}'
-        )
+        self.authenticate_with_token(self.token_aaa)
 
         request = self.client.get(
             url,
@@ -66,13 +72,13 @@ class TenantAdminViewSetTestCase(BaseTestCase):
             200
         )
 
-    def test_authenticated_list_filters(self):
+    def test_authenticated_list_filters(
+        self: TestCase,
+    ) -> None:
 
         url = f'/api/tenants/{self.tenant_aaa.id}/admins/'
 
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f'Bearer {self.token_aaa.token}'
-        )
+        self.authenticate_with_token(self.token_aaa)
 
         request = self.client.get(
             url + f'?email={self.user_bbb.email}',
@@ -84,13 +90,13 @@ class TenantAdminViewSetTestCase(BaseTestCase):
             200
         )
 
-    def test_authenticated_list_no_premission(self):
+    def test_authenticated_list_no_premission(
+        self: TestCase,
+    ) -> None:
 
         """ User (1) should not see Tenant (2) """
 
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f'Bearer {self.token_aaa.token}'
-        )
+        self.authenticate_with_token(self.token_aaa)
 
         request = self.client.get(
             f'/api/tenants/{self.tenant_bbb.id}/admins/',
@@ -102,11 +108,11 @@ class TenantAdminViewSetTestCase(BaseTestCase):
             403
         )
 
-    def test_authenticated_create(self):
+    def test_authenticated_create(
+        self: TestCase,
+    ) -> None:
 
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f'Bearer {self.token_aaa.token}'
-        )
+        self.authenticate_with_token(self.token_aaa)
 
         request = self.client.post(
             f'/api/tenants/{self.tenant_aaa.id}/admins/',
@@ -122,11 +128,11 @@ class TenantAdminViewSetTestCase(BaseTestCase):
             201
         )
 
-    def test_authenticated_create_missing_tenant(self):
+    def test_authenticated_create_missing_tenant(
+        self: TestCase,
+    ) -> None:
 
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f'Bearer {self.token_aaa.token}'
-        )
+        self.authenticate_with_token(self.token_aaa)
 
         request = self.client.post(
             f'/api/tenants/{self.tenant_aaa.id}/admins/',
@@ -141,11 +147,11 @@ class TenantAdminViewSetTestCase(BaseTestCase):
             400
         )
 
-    def test_authenticated_create_switching_tenants(self):
+    def test_authenticated_create_switching_tenants(
+        self: TestCase,
+    ) -> None:
 
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f'Bearer {self.token_aaa.token}'
-        )
+        self.authenticate_with_token(self.token_aaa)
 
         request = self.client.post(
             f'/api/tenants/{self.tenant_aaa.id}/admins/',
@@ -161,11 +167,11 @@ class TenantAdminViewSetTestCase(BaseTestCase):
             400
         )
 
-    def test_authenticated_create_and_update(self):
+    def test_authenticated_create_and_update(
+        self: TestCase,
+    ) -> None:
 
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f'Bearer {self.token_aaa.token}'
-        )
+        self.authenticate_with_token(self.token_aaa)
 
         request = self.client.post(
             f'/api/tenants/{self.tenant_aaa.id}/admins/',
@@ -198,11 +204,11 @@ class TenantAdminViewSetTestCase(BaseTestCase):
             200
         )
 
-    def test_authenticated_create_and_update_switch_tenants(self):
+    def test_authenticated_create_and_update_switch_tenants(
+        self: TestCase,
+    ) -> None:
 
-        self.client.credentials(
-            HTTP_AUTHORIZATION=f'Bearer {self.token_aaa.token}'
-        )
+        self.authenticate_with_token(self.token_aaa)
 
         request = self.client.post(
             f'/api/tenants/{self.tenant_aaa.id}/admins/',

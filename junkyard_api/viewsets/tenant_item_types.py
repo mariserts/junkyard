@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from typing import Final, Union
 
+from django.db.models.query import QuerySet
+
 from rest_framework.request import Request
 from rest_framework.response import Response
 
@@ -24,6 +26,7 @@ class TenantItemTypesViewSet(
     permission_classes: Final = BaseViewSet.permission_classes + [
         TenantUserPermission, ]
     serializer_class: Final = ItemTypeSerializer
+    queryset = QuerySet()
 
     def list(
         self: BaseViewSet,

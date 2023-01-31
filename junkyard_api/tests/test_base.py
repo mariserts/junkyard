@@ -19,7 +19,9 @@ from ..models import (
 
 class BaseTestCase(TestCase):
 
-    def setUp(self):
+    def setUp(
+        self: TestCase,
+    ) -> None:
 
         aaa_email = 'BaseTestCaseAaa@test.case'
         aaa_password = 'aaaa'
@@ -131,5 +133,16 @@ class BaseTestCase(TestCase):
             expires=expires
         )
 
-    def tearDown(self):
+    def tearDown(
+        self: TestCase,
+    ) -> None:
         User.objects.all().delete()
+
+    def authenticate_with_token(
+        self: TestCase,
+        token: AccessToken,
+    ) -> None:
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f'Bearer {token.token}'
+        )

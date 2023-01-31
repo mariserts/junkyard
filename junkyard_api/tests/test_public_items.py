@@ -1,10 +1,14 @@
 # -*- coding: utf-8 -*-
+from django.test import TestCase
+
 from .test_base import BaseTestCase
 
 
 class PublicItemsViewSetTestCase(BaseTestCase):
 
-    def test_list(self):
+    def test_list(
+        self: TestCase,
+    ) -> None:
 
         request = self.client.get(
             '/api/public-items/',
@@ -16,7 +20,9 @@ class PublicItemsViewSetTestCase(BaseTestCase):
             200
         )
 
-    def test_retrieve(self):
+    def test_retrieve(
+        self: TestCase,
+    ) -> None:
 
         request = self.client.get(
             f'/api/public-items/{self.item_aaa.id}/',
@@ -38,7 +44,9 @@ class PublicItemsViewSetTestCase(BaseTestCase):
             404
         )
 
-    def test_creation(self):
+    def test_creation(
+        self: TestCase,
+    ) -> None:
 
         request = self.client.post(
             '/api/public-items/',
@@ -51,7 +59,9 @@ class PublicItemsViewSetTestCase(BaseTestCase):
             401
         )
 
-    def test_retrieve_not_found_published_no_published_at(self):
+    def test_retrieve_not_found_published_no_published_at(
+        self: TestCase,
+    ) -> None:
 
         request = self.client.get(
             f'/api/public-items/{self.item_bbb.id}/',
@@ -63,7 +73,9 @@ class PublicItemsViewSetTestCase(BaseTestCase):
             404
         )
 
-    def test_retrieve_not_found_unpublished_no_published_at(self):
+    def test_retrieve_not_found_unpublished_no_published_at(
+        self: TestCase,
+    ) -> None:
 
         request = self.client.get(
             f'/api/public-items/{self.item_ccc.id}/',
@@ -75,7 +87,9 @@ class PublicItemsViewSetTestCase(BaseTestCase):
             404
         )
 
-    def test_retrieve_not_found(self):
+    def test_retrieve_not_found(
+        self: TestCase,
+    ) -> None:
 
         request = self.client.get(
             '/api/public-items/1000/',
