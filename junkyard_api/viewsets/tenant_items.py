@@ -4,8 +4,7 @@ from typing import Final
 from django.db.models import Q
 from django.db.models.query import QuerySet
 
-from rest_framework import mixins
-from rest_framework.exceptions import ValidationError
+from rest_framework import mixins, serializers
 
 from ..filtersets.items import ItemsFilterSet
 from ..mixins import ViewSetKwargsMixin, ViewSetPayloadMixin
@@ -65,7 +64,7 @@ class TenantItemsViewSet(
     def update(self, request, *args, **kwargs):
 
         if str(self.get_payload_tenant()) != str(self.get_kwarg_tenant_pk()):
-            raise ValidationError({
+            raise serializers.ValidationError({
                 'tenant': ['Tenant switching is not allowed']
             })
 
@@ -74,7 +73,7 @@ class TenantItemsViewSet(
     def create(self, request, *args, **kwargs):
 
         if str(self.get_payload_tenant()) != str(self.get_kwarg_tenant_pk()):
-            raise ValidationError({
+            raise serializers.ValidationError({
                 'tenant': ['Tenant switching is not allowed']
             })
 

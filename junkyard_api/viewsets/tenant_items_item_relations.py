@@ -3,7 +3,7 @@ from typing import Final
 
 from django.db.models.query import QuerySet
 
-from rest_framework import mixins
+from rest_framework import mixins, serializers
 
 from ..mixins import ViewSetKwargsMixin
 from ..models import ItemRelation
@@ -46,3 +46,27 @@ class TenantItemItemRelationsViewSet(
         )
 
         return queryset
+
+    def create(self, request, *args, **kwargs):
+
+        item_pk = self.get_kwarg_item_pk()
+        child = request.data.get('child', item_pk)
+
+        if str(item_pk) != str(child):
+            raise serializers.ValidationError({
+                'child': ['Child item switching is not allowed']
+            })
+
+        return super().create(request, *args, **kwargs)
+
+    def update(self, request, *args, **kwargs):
+
+        item_pk = self.get_kwarg_item_pk()
+        child = request.data.get('child', item_pk)
+
+        if str(item_pk) != str(child):
+            raise serializers.ValidationError({
+                'child': ['Child item switching is not allowed']
+            })
+
+        return super().update(request, *args, **kwargs)

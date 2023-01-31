@@ -96,3 +96,133 @@ class TenantItemItemRelationsViewSetTestCase(BaseTestCase):
             request.status_code,
             404
         )
+
+    def test_authenticated_create(
+        self: TestCase,
+    ) -> None:
+
+        url = f'/api/tenants/{self.tenant_aaa.id}/'
+        url += f'items/{self.item_aaa.id}/relations/'
+
+        self.authenticate_with_token(self.token_aaa)
+
+        request = self.client.post(
+            url,
+            {
+                'parent': self.item_bbb.id,
+                'child': self.item_aaa.id,
+                'label': 'xd'
+            },
+            format='json'
+        )
+
+        self.assertEquals(
+            request.status_code,
+            201
+        )
+
+    def test_authenticated_create_and_update(
+        self: TestCase,
+    ) -> None:
+
+        url = f'/api/tenants/{self.tenant_aaa.id}/'
+        url += f'items/{self.item_aaa.id}/relations/'
+
+        self.authenticate_with_token(self.token_aaa)
+
+        request = self.client.post(
+            url,
+            {
+                'parent': self.item_bbb.id,
+                'child': self.item_aaa.id,
+                'label': 'xd'
+            },
+            format='json'
+        )
+
+        self.assertEquals(
+            request.status_code,
+            201
+        )
+
+        data = request.json()
+
+        request = self.client.patch(
+            url + f'{data["id"]}/',
+            {
+                'parent': self.item_bbb.id,
+                'child': self.item_aaa.id,
+                'label': 'xdxd'
+            },
+            format='json'
+        )
+
+        self.assertEquals(
+            request.status_code,
+            200
+        )
+
+    def test_authenticated_create_and_update_child_not_matching(
+        self: TestCase,
+    ) -> None:
+
+        url = f'/api/tenants/{self.tenant_aaa.id}/'
+        url += f'items/{self.item_aaa.id}/relations/'
+
+        self.authenticate_with_token(self.token_aaa)
+
+        request = self.client.post(
+            url,
+            {
+                'parent': self.item_bbb.id,
+                'child': self.item_aaa.id,
+                'label': 'xd'
+            },
+            format='json'
+        )
+
+        self.assertEquals(
+            request.status_code,
+            201
+        )
+
+        data = request.json()
+
+        request = self.client.patch(
+            url + f'{data["id"]}/',
+            {
+                'parent': self.item_bbb.id,
+                'child': self.item_bbb.id,
+                'label': 'xdxd'
+            },
+            format='json'
+        )
+
+        self.assertEquals(
+            request.status_code,
+            400
+        )
+
+    def test_authenticated_create_payload_child_not_matching(
+        self: TestCase,
+    ) -> None:
+
+        url = f'/api/tenants/{self.tenant_aaa.id}/'
+        url += f'items/{self.item_aaa.id}/relations/'
+
+        self.authenticate_with_token(self.token_aaa)
+
+        request = self.client.post(
+            url,
+            {
+                'parent': self.item_bbb.id,
+                'child': self.item_bbb.id,
+                'label': 'xd'
+            },
+            format='json'
+        )
+
+        self.assertEquals(
+            request.status_code,
+            400
+        )
