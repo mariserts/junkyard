@@ -14,12 +14,6 @@ class ReadOnlyPermission(permissions.BasePermission):
         return False
 
 
-class AuthenticatedUserPermission(permissions.BasePermission):
-
-    def has_permission(self, request, view):
-        return request.user.is_authenticated is True
-
-
 class TenantUserPermission(permissions.BasePermission):
 
     def has_permission(self, request, view):

@@ -5,6 +5,7 @@ from django.db.models.query import QuerySet
 
 from rest_framework import mixins
 
+from ..filtersets.users import UsersFilterSet
 from ..models import User
 from ..serializers.users import UserSerializer
 
@@ -20,7 +21,8 @@ class UsersViewSet(
     BaseViewSet
 ):
 
-    ordering_fields = ['id']
+    filterset_class: Final = UsersFilterSet
+    ordering_fields: Final = ('id', )
     queryset: Final = User.objects.all()
     serializer_class: Final = UserSerializer
 

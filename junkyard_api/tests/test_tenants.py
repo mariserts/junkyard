@@ -89,16 +89,6 @@ class TenantsViewSetTestCase(BaseTestCase):
         )
 
         request = self.client.get(
-            url + f'?successor_of={self.tenant_aaa.id}',
-            format='json'
-        )
-
-        self.assertEquals(
-            request.status_code,
-            200
-        )
-
-        request = self.client.get(
             url + f'?predecessors_of={self.tenant_aaa.id}',
             format='json'
         )
@@ -119,7 +109,27 @@ class TenantsViewSetTestCase(BaseTestCase):
         )
 
         request = self.client.get(
+            url + f'?successors_of={self.tenant_aaa.id}',
+            format='json'
+        )
+
+        self.assertEquals(
+            request.status_code,
+            200
+        )
+
+        request = self.client.get(
             url + f'?all_successors_of={self.tenant_aaa.id}',
+            format='json'
+        )
+
+        self.assertEquals(
+            request.status_code,
+            200
+        )
+
+        request = self.client.get(
+            url + '?is_root=true',
             format='json'
         )
 
