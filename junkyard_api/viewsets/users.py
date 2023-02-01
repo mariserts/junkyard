@@ -7,6 +7,7 @@ from django.core.validators import validate_email
 from django.db.models.query import QuerySet
 
 from rest_framework import mixins, permissions, serializers
+from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from ..filtersets.users import UsersFilterSet
@@ -84,4 +85,31 @@ class UsersViewSet(
         return Response(
             UserSerializer(user).data,
             status=201
+        )
+
+    @action(
+        detail=True,
+        methods=['post'],
+        name='Change Password',
+        url_path='set-password',
+    )
+    def set_password(self, request, pk=None):
+
+        if str(pk) != str(request.user.id):
+            return Response('Permission denied', status=403)
+
+        password = request.data['password']
+
+        try:
+            validate_password(password)
+        except ValidationError as e:
+            raise serializers.ValidationError({
+                'password': [str(e)]
+            })
+
+        request.user.set_password(password)
+
+        return Response(
+            {},
+            status=200
         )

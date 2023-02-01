@@ -126,7 +126,7 @@ class UsersViewSetTestCase(BaseTestCase):
             200
         )
 
-    def test_authenticated_create(
+    def test_unauthenticated_create(
         self: TestCase,
     ) -> None:
 
@@ -218,4 +218,67 @@ class UsersViewSetTestCase(BaseTestCase):
         self.assertEquals(
             request.status_code,
             400
+        )
+
+    def test_authenticated_set_password(
+        self: TestCase,
+    ) -> None:
+
+        url = f'/api/users/{self.token_aaa.id}/set-password/'
+
+        self.authenticate_with_token(self.token_aaa)
+
+        request = self.client.post(
+            url,
+            {
+                'password': 'HelloWorld123!!'
+            },
+            format='json'
+        )
+
+        self.assertEquals(
+            request.status_code,
+            200
+        )
+
+    def test_authenticated_set_bad_password(
+        self: TestCase,
+    ) -> None:
+
+        url = f'/api/users/{self.token_aaa.id}/set-password/'
+
+        self.authenticate_with_token(self.token_aaa)
+
+        request = self.client.post(
+            url,
+            {
+                'password': '123456'
+            },
+            format='json'
+        )
+
+        self.assertEquals(
+            request.status_code,
+            400
+        )
+
+    def test_authenticated_set_password_to_someone_else(
+        self: TestCase,
+    ) -> None:
+
+        url = f'/api/users/{self.token_bbb.id}/set-password/'
+
+        self.authenticate_with_token(self.token_aaa)
+
+        request = self.client.post(
+            url,
+            {
+                'password': 'HelloWorld123!!'
+            },
+            format='json'
+        )
+
+        self.assertEquals(
+            request.status_code,
+            403
         )
