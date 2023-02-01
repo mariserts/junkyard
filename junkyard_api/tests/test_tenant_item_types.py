@@ -41,7 +41,7 @@ class TenantItemTypeViewSetTestCase(BaseTestCase):
         self.authenticate_with_token(self.token_aaa)
 
         request = self.client.get(
-            f'/api/tenants/{self.tenant_aaa.id}/',
+            f'/api/tenants/{self.tenant_aaa.id}/item-types/',
             format='json'
         )
 
@@ -64,4 +64,36 @@ class TenantItemTypeViewSetTestCase(BaseTestCase):
         self.assertEquals(
             request.status_code,
             200
+        )
+
+    def test_authenticated_retrieve_forbidden_item_type(
+        self: TestCase,
+    ) -> None:
+
+        self.authenticate_with_token(self.token_aaa)
+
+        request = self.client.get(
+            f'/api/tenants/{self.tenant_aaa.id}/item-types/news/',
+            format='json'
+        )
+
+        self.assertEquals(
+            request.status_code,
+            403
+        )
+
+    def test_authenticated_retrieve_item_type_not_found(
+        self: TestCase,
+    ) -> None:
+
+        self.authenticate_with_token(self.token_aaa)
+
+        request = self.client.get(
+            f'/api/tenants/{self.tenant_aaa.id}/item-types/news2/',
+            format='json'
+        )
+
+        self.assertEquals(
+            request.status_code,
+            404
         )

@@ -194,15 +194,17 @@ class TenantItemsViewSetTestCase(BaseTestCase):
             201
         )
 
-        parent_items = request.json()['parent_items']
+        data = request.json()
+
+        parent_items = data['parent_items']
 
         self.assertEquals(
             len(parent_items),
             1
         )
 
-        request = self.client.post(
-            url,
+        request = self.client.patch(
+            url + f'{data["id"]}/',
             {
                 'item_type': 'flat-page',
                 'tenant': self.tenant_aaa.id,
@@ -218,7 +220,7 @@ class TenantItemsViewSetTestCase(BaseTestCase):
 
         self.assertEquals(
             request.status_code,
-            201
+            200
         )
 
         parent_items = request.json()['parent_items']
@@ -241,6 +243,33 @@ class TenantItemsViewSetTestCase(BaseTestCase):
             {
                 'item_type': 'news',
                 'tenant': self.tenant_aaa.id,
+                'translatable_content': [{
+                    'title': 'Test Aaa',
+                    'slug': 'test-aaa',
+                    'content': 'test aaa content'
+                }],
+            },
+            format='json'
+        )
+
+        self.assertEquals(
+            request.status_code,
+            400
+        )
+
+    def test_authenticated_create_change_tenant(
+        self: TestCase,
+    ) -> None:
+
+        url = f'/api/tenants/{self.tenant_aaa.id}/items/'
+
+        self.authenticate_with_token(self.token_aaa)
+
+        request = self.client.post(
+            url,
+            {
+                'item_type': 'news',
+                'tenant': self.tenant_bbb.id,
                 'translatable_content': [{
                     'title': 'Test Aaa',
                     'slug': 'test-aaa',
@@ -282,8 +311,10 @@ class TenantItemsViewSetTestCase(BaseTestCase):
             201
         )
 
-        request = self.client.post(
-            url,
+        data = request.json()
+
+        request = self.client.patch(
+            url + f'{data["id"]}/',
             {
                 'item_type': 'flat-page',
                 'tenant': self.tenant_bbb.id,
