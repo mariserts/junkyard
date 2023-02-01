@@ -60,14 +60,14 @@ class UsersViewSet(
             validate_email(email)
         except ValidationError:
             raise serializers.ValidationError({
-                'email': ['Email is malformed']
+                'email': ['Email is invalid']
             })
 
         try:
             validate_password(password)
-        except ValidationError:
+        except ValidationError as e:
             raise serializers.ValidationError({
-                'password': ['Password is too weak']
+                'password': [str(e)]
             })
 
         exists = User.objects.filter(email=email).exists()
