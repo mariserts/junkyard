@@ -54,8 +54,19 @@ class UsersViewSet(
 
     def create(self, request, *args, **kwargs):
 
-        email = request.data['email']
-        password = request.data['password']
+        try:
+            email = request.data['email']
+        except KeyError:
+            raise serializers.ValidationError({
+                'email': ['email is required']
+            })
+
+        try:
+            password = request.data['password']
+        except KeyError:
+            raise serializers.ValidationError({
+                'password': ['password is required']
+            })
 
         try:
             validate_email(email)
@@ -98,7 +109,12 @@ class UsersViewSet(
         if str(pk) != str(request.user.id):
             return Response('Permission denied', status=403)
 
-        password = request.data['password']
+        try:
+            password = request.data['password']
+        except KeyError:
+            raise serializers.ValidationError({
+                'password': ['password is required']
+            })
 
         try:
             validate_password(password)
