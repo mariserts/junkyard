@@ -146,6 +146,38 @@ class UsersViewSetTestCase(BaseTestCase):
             201
         )
 
+    def test_unauthenticated_create_no_email_no_password(
+        self: TestCase,
+    ) -> None:
+
+        url = '/api/users/'
+
+        request = self.client.post(
+            url,
+            {
+                'email': 'test@test.case',
+            },
+            format='json'
+        )
+
+        self.assertEquals(
+            request.status_code,
+            400
+        )
+
+        request = self.client.post(
+            url,
+            {
+                'password': 'HelloWorld123!',
+            },
+            format='json'
+        )
+
+        self.assertEquals(
+            request.status_code,
+            400
+        )
+
     def test_authenticated_create_duplicates(
         self: TestCase,
     ) -> None:
@@ -254,6 +286,25 @@ class UsersViewSetTestCase(BaseTestCase):
             {
                 'password': '123456'
             },
+            format='json'
+        )
+
+        self.assertEquals(
+            request.status_code,
+            400
+        )
+
+    def test_authenticated_set_no_password(
+        self: TestCase,
+    ) -> None:
+
+        url = f'/api/users/{self.token_aaa.id}/set-password/'
+
+        self.authenticate_with_token(self.token_aaa)
+
+        request = self.client.post(
+            url,
+            {},
             format='json'
         )
 

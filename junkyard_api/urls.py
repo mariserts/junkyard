@@ -9,6 +9,7 @@ from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 
 from .viewsets.public_items import PublicItemsViewSet
+from .viewsets.signing import SigningViewSet
 from .viewsets.tenant_admins import TenantAdminsViewSet
 from .viewsets.tenant_items_item_relations import (
     TenantItemItemRelationsViewSet
@@ -44,14 +45,19 @@ router.register(
     basename='public-items'
 )
 router.register(
-    r'users',
-    UsersViewSet,
-    basename='users'
+    r'signer',
+    SigningViewSet,
+    basename='signer'
 )
 router.register(
     r'tenants',
     TenantsViewSet,
     basename='tenants'
+)
+router.register(
+    r'users',
+    UsersViewSet,
+    basename='users'
 )
 
 
