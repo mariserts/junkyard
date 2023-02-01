@@ -70,6 +70,24 @@ class UsersViewSetTestCase(BaseTestCase):
             200
         )
 
+    def test_authenticated_retrieve_other_user(
+        self: TestCase,
+    ) -> None:
+
+        url = f'/api/users/{self.user_bbb.id}/'
+
+        self.authenticate_with_token(self.token_aaa)
+
+        request = self.client.get(
+            url,
+            format='json'
+        )
+
+        self.assertEquals(
+            request.status_code,
+            200
+        )
+
     def test_authenticated_list_filters(
         self: TestCase,
     ) -> None:
@@ -106,4 +124,98 @@ class UsersViewSetTestCase(BaseTestCase):
         self.assertEquals(
             request.status_code,
             200
+        )
+
+    def test_authenticated_create(
+        self: TestCase,
+    ) -> None:
+
+        url = '/api/users/'
+
+        request = self.client.post(
+            url,
+            {
+                'email': 'test@test.case',
+                'password': 'HelloWorld123!'
+            },
+            format='json'
+        )
+
+        self.assertEquals(
+            request.status_code,
+            201
+        )
+
+    def test_authenticated_create_duplicates(
+        self: TestCase,
+    ) -> None:
+
+        url = '/api/users/'
+
+        request = self.client.post(
+            url,
+            {
+                'email': 'test@test.case',
+                'password': 'HelloWorld123!'
+            },
+            format='json'
+        )
+
+        self.assertEquals(
+            request.status_code,
+            201
+        )
+
+        request = self.client.post(
+            url,
+            {
+                'email': 'test@test.case',
+                'password': 'HelloWorld123!'
+            },
+            format='json'
+        )
+
+        self.assertEquals(
+            request.status_code,
+            400
+        )
+
+    def test_authenticated_create_bad_email(
+        self: TestCase,
+    ) -> None:
+
+        url = '/api/users/'
+
+        request = self.client.post(
+            url,
+            {
+                'email': 'test.case',
+                'password': 'HelloWorld123!'
+            },
+            format='json'
+        )
+
+        self.assertEquals(
+            request.status_code,
+            400
+        )
+
+    def test_authenticated_create_bad_password(
+        self: TestCase,
+    ) -> None:
+
+        url = '/api/users/'
+
+        request = self.client.post(
+            url,
+            {
+                'email': 'test@test.case',
+                'password': '123456'
+            },
+            format='json'
+        )
+
+        self.assertEquals(
+            request.status_code,
+            400
         )
