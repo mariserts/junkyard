@@ -19,9 +19,6 @@ def unsign_object(
     data = signature_parts[1]
     max_age = prop_signer.unsign_object(signature_parts[0])
 
-    print(data)
-    print(max_age)
-
     if isinstance(max_age, int) is False:
         raise BadMaxAgeException('Max age must be of type int')
 

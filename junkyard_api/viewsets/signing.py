@@ -23,7 +23,6 @@ class SigningViewSet(
 ):
 
     queryset = QuerySet()
-    serializer_class = SigningSerializer
 
     def get_serializer(
         self: BaseViewSet
