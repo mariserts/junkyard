@@ -9,6 +9,7 @@ from ..conf import settings
 from ..models import Item
 
 from .filters import EmptyMultipleChoiceFilter
+from .search_vectors import SearchVectorConditionGenerator
 
 
 class ItemsFilterSet(FilterSet):
@@ -20,6 +21,25 @@ class ItemsFilterSet(FilterSet):
         ]
 
     item_type = EmptyMultipleChoiceFilter(method='filter_by_item_type')
+    filter = EmptyMultipleChoiceFilter(method='filter_by_filter')
+
+    def filter_by_filter(
+        self,
+        queryset: QuerySet,
+        name: str,
+        value: Union[str, None]
+    ) -> QuerySet:
+
+        if len(value) == 0:
+            return queryset
+
+        queryset = queryset.filter(
+            SearchVectorConditionGenerator(value).get_conditions()
+        ).prefetch_related(
+            'search_vectors'
+        ).distinct()
+
+        return queryset
 
     def filter_by_item_type(
         self,

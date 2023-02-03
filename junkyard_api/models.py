@@ -522,3 +522,17 @@ class ItemRelation(models.Model):
         default=dict,
         null=True
     )
+
+
+class SearchVector(models.Model):
+
+    item = models.ForeignKey(
+        Item,
+        on_delete=models.CASCADE,
+        related_name='search_vectors'
+    )
+
+    field_name = models.CharField(max_length=255)
+    language = models.CharField(max_length=255, blank=True, null=True)
+    raw_value = models.CharField(max_length=4096, blank=True, null=True)
+    vector = models.CharField(max_length=4096)

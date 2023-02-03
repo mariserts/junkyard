@@ -5,7 +5,7 @@ from rest_framework import serializers
 
 from ..conf import settings
 from ..exceptions import ItemTypeNotFoundException
-from ..models import Item, ItemRelation, Tenant
+from ..models import Item, ItemRelation, SearchVector, Tenant
 
 from .item_relations import NestedItemRelationSerializer
 
@@ -123,6 +123,7 @@ class ItemSerializer(serializers.ModelSerializer):
         self.manage_parent_items_relations(instance, validated_data)
 
         self.post_save(instance, validated_data)
+        self.manage_search_vectors(instance)
 
         return instance
 
@@ -265,3 +266,48 @@ class ItemSerializer(serializers.ModelSerializer):
         """
 
         pass
+
+    @staticmethod
+    def create_search_vectors(
+        instance: Item,
+    ) -> None:
+
+        """
+
+        Method to create search vectors
+        Called after item save in manage_search_vectors
+        Make metadata and translatable_content data more accessible
+
+        Attrs:
+        - instance Item: item object
+
+        Returns:
+        - None
+
+        """
+
+    def manage_search_vectors(
+        self: serializers.BaseSerializer,
+        instance: Item,
+    ) -> None:
+
+        """
+
+        Entrypoint for search vector management logic
+
+        Attrs:
+        - instance Item: item object
+
+        Returns:
+        - None
+
+        """
+
+        SearchVector.objects.filter(
+            item_id=instance.id
+        ).delete()
+
+        item_type = instance.item_type
+        serializer = settings.ITEM_TYPE_REGISTRY.get_serializer(item_type)
+        if serializer is not None:
+            serializer = serializer.create_search_vectors(instance)
