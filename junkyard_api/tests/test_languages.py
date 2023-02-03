@@ -85,3 +85,31 @@ class LanguagesViewSetTestCase(BaseTestCase):
             request.status_code,
             404
         )
+
+    def test_authenticated_list_filter_default(
+        self: TestCase,
+    ) -> None:
+
+        self.authenticate_with_token(self.token_aaa)
+
+        request = self.client.get(
+            '/api/languages/?default=true',
+            format='json'
+        )
+
+        self.assertEquals(
+            request.status_code,
+            200
+        )
+
+        data = request.json()
+
+        self.assertEquals(
+            data['total'],
+            1
+        )
+
+        self.assertEquals(
+            data['results'][0]['code'],
+            settings.LANGUAGE_DEFAULT
+        )

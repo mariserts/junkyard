@@ -7,6 +7,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from ..conf import settings
+from ..filtersets.languages import LanguagesFilterSet
 from ..serializers.languages import LanguageSerializer
 
 from .base import BaseViewSet
@@ -16,6 +17,7 @@ class LanguagesViewSet(
     BaseViewSet
 ):
 
+    filterset_class = LanguagesFilterSet
     serializer_class: Final = LanguageSerializer
     queryset = QuerySet()
 
@@ -28,7 +30,11 @@ class LanguagesViewSet(
         languages = list(
             map(
                 lambda language:
-                    {'code': language[0], 'name': language[1]},
+                    {
+                        'code': language[0],
+                        'name': language[1],
+                        'default': language[0] == settings.LANGUAGE_DEFAULT
+                    },
                 languages
             )
         )
@@ -54,6 +60,22 @@ class LanguagesViewSet(
     ) -> Response:
 
         languages = self.get_languages()
+
+        default = request.GET.get('default', None)
+
+        if default in ['true', 'false', '1', '0']:
+            default = default in ['true', '1']
+        else:
+            default = None
+
+        if default is not None:
+            languages = list(
+                filter(
+                    lambda language:
+                        language['default'] == default,
+                    languages
+                )
+            )
 
         data = {
             'next': None,
