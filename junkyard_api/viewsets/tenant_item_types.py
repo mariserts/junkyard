@@ -42,7 +42,7 @@ class TenantItemTypesViewSet(
             'page': 1,
             'pages': 1,
             'total': len(item_types),
-            'results': ItemTypeSerializer(item_types, many=True).data
+            'results': self.serializer_class(item_types, many=True).data
         }
 
         return Response(data)
@@ -61,4 +61,4 @@ class TenantItemTypesViewSet(
         except ItemTypeNotFoundException:
             return Response('Not found', status=404)
 
-        return Response(ItemTypeSerializer(item_type).data)
+        return Response(self.serializer_class(item_type).data)
