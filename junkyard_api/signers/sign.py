@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from typing import Union
-
 from django.core.signing import Signer, TimestampSigner
 
 from .exceptions import BadMaxAgeException
@@ -9,22 +7,29 @@ from .exceptions import BadMaxAgeException
 def sign_object(
     data: dict,
     salt: str = '',
-    max_age: Union[None, int] = None
+    max_age: int = 0,
+    separator: str = '::'
 ) -> dict:
 
-    if max_age is not None:
-        if isinstance(max_age, int) is False:
-            raise BadMaxAgeException('Max age must be of type int')
+    if isinstance(max_age, int) is False:
+        raise BadMaxAgeException('Max age must be of type int')
 
-    if max_age is not None:
-        signer = TimestampSigner(salt)
+    prop_signer = Signer()
+    signed_max_age = prop_signer.sign_object(max_age)
+
+    if max_age == 0:
+        signer = Signer(salt=salt)
     else:
-        signer = Signer(salt)
+        signer = TimestampSigner(salt=salt)
 
     signed_data = signer.sign_object(data)
+
+    signature = f'{signed_max_age}{separator}'
+    signature += f'{signed_data}'
 
     return {
         'data': signed_data,
         'max_age': max_age,
         'salt': salt,
+        'signature': signature,
     }
