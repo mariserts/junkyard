@@ -8,6 +8,7 @@ from rest_framework_nested import routers
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 
+from .viewsets.languages import LanguagesViewSet
 from .viewsets.public_items import PublicItemsViewSet
 from .viewsets.signing import SigningViewSet
 from .viewsets.tenant_admins import TenantAdminsViewSet
@@ -39,6 +40,11 @@ schema_view = get_schema_view(
 router = routers.SimpleRouter()
 
 # Base urls
+router.register(
+    r'languages',
+    LanguagesViewSet,
+    basename='languages'
+)
 router.register(
     r'public-items',
     PublicItemsViewSet,
