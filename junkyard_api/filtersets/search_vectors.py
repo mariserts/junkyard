@@ -26,18 +26,19 @@ class SearchVectorConditionGenerator(BaseConditionGenerator):
 
     def get_exact_condition(
         self: BaseConditionGenerator,
-        field: str,
-        value: str,
+        filter_parts: List[str],
         case_sensetive: bool = False
     ) -> Q:
 
         lookup = 'exact'
 
+        field = filter_parts[0]
+        value = filter_parts[1]
+
         if case_sensetive is True:
             lookup = f'i{lookup}'
-            field = str(field).replace(f'__{lookup}')
-        else:
-            field = str(field).replace(f'__{lookup}')
+
+        field = str(field).replace(f'__{lookup}', '')
 
         return Q(**{
             'search_vectors__field_name': field,
@@ -46,33 +47,33 @@ class SearchVectorConditionGenerator(BaseConditionGenerator):
 
     def get_in_condition(
         self: BaseConditionGenerator,
-        field: str,
-        value: str,
+        filter_parts: List[str],
         sepatrator: str = ','
     ) -> Q:
 
-        field = str(field).replace('__in')
-        value = str(value).split(',')
+        field = str(filter_parts[0]).replace('__in')
+        value = str(filter_parts[1]).split(',')
 
         return Q(**{
             'search_vectors__field_name': field,
             'search_vectors__raw_value__in': value.split(sepatrator)
         })
 
-    def get_in_contains(
+    def get_contains_condition(
         self: BaseConditionGenerator,
-        field: str,
-        value: str,
+        filter_parts: List[str],
         case_sensetive: bool = False
     ) -> Q:
 
         lookup = 'contains'
 
+        field = filter_parts[0]
+        value = filter_parts[1]
+
         if case_sensetive is True:
             lookup = f'i{lookup}'
-            field = str(field).replace(f'__{lookup}')
-        else:
-            field = str(field).replace(f'__{lookup}')
+
+        field = str(field).replace(f'__{lookup}', '')
 
         return Q(**{
             'search_vectors__field_name': field,
@@ -81,18 +82,19 @@ class SearchVectorConditionGenerator(BaseConditionGenerator):
 
     def get_in_endswith(
         self: BaseConditionGenerator,
-        field: str,
-        value: str,
+        filter_parts: List[str],
         case_sensetive: bool = False
     ) -> Q:
 
         lookup = 'endswith'
 
+        field = filter_parts[0]
+        value = filter_parts[1]
+
         if case_sensetive is True:
             lookup = f'i{lookup}'
-            field = str(field).replace(f'__{lookup}')
-        else:
-            field = str(field).replace(f'__{lookup}')
+
+        field = str(field).replace(f'__{lookup}', '')
 
         return Q(**{
             'search_vectors__field_name': field,
@@ -101,18 +103,19 @@ class SearchVectorConditionGenerator(BaseConditionGenerator):
 
     def get_in_startswith(
         self: BaseConditionGenerator,
-        field: str,
-        value: str,
+        filter_parts: List[str],
         case_sensetive: bool = False
     ) -> Q:
 
         lookup = 'startswith'
 
+        field = filter_parts[0]
+        value = filter_parts[1]
+
         if case_sensetive is True:
             lookup = f'i{lookup}'
-            field = str(field).replace(f'__{lookup}')
-        else:
-            field = str(field).replace(f'__{lookup}')
+
+        field = str(field).replace(f'__{lookup}', '')
 
         return Q(**{
             'search_vectors__field_name': field,
@@ -130,31 +133,31 @@ class SearchVectorConditionGenerator(BaseConditionGenerator):
         value = filter_parts[1]
 
         if field.endswith('__exact') is True:
-            return self.get_exact_condition(field, value)
+            return self.get_exact_condition(filter_parts)
 
         if field.endswith('__iexact') is True:
-            return self.get_exact_condition(field, value, True)
+            return self.get_exact_condition(filter_parts, True)
 
-        elif field.endswith('__in') is True:
-            return self.get_in_condition(field, value)
+        if field.endswith('__in') is True:
+            return self.get_in_condition(filter_parts)
 
-        elif field.endswith('__contains') is True:
-            return self.get_contains_condition(field, value)
+        if field.endswith('__contains') is True:
+            return self.get_contains_condition(filter_parts)
 
-        elif field.endswith('__icontains') is True:
-            return self.get_contains_condition(field, value, True)
+        if field.endswith('__icontains') is True:
+            return self.get_contains_condition(filter_parts, True)
 
-        elif field.endswith('__startswith') is True:
-            return self.get_startswith_condition(field, value)
+        if field.endswith('__startswith') is True:
+            return self.get_startswith_condition(filter_parts)
 
-        elif field.endswith('__istartswith') is True:
-            return self.get_startswith_condition(field, value, True)
+        if field.endswith('__istartswith') is True:
+            return self.get_startswith_condition(filter_parts, True)
 
-        elif field.endswith('__endswith') is True:
-            return self.get_endswith_condition(field, value)
+        if field.endswith('__endswith') is True:
+            return self.get_endswith_condition(filter_parts)
 
-        elif field.endswith('__endswith') is True:
-            return self.get_endswith_condition(field, value, True)
+        if field.endswith('__endswith') is True:
+            return self.get_endswith_condition(filter_parts, True)
 
         return Q(
             search_vectors__field_name=field,
