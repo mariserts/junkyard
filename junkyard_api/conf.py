@@ -4,6 +4,9 @@ from django.conf import settings as dj_settings
 
 class Settings:
 
+    BASENAME_AUTHENTICATE = 'authenticate'
+    PATH_AUTHENTICATE = r'authenticate'
+
     @property
     def CASCADE_TENANT_PERMISSIONS(self):
         return getattr(

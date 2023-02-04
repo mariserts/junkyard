@@ -18,6 +18,7 @@ from rest_framework.test import APIClient
 
 from oauth2_provider.models import AccessToken
 
+from ..conf import settings
 from ..models import Application, User
 from ..serializers.authenticate import (
     BaseSerializer,
@@ -415,7 +416,7 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
         url += '://'
         url += request.get_host()
         url += reverse(
-            f'authenticate-{self.PATH_SET_PASSWORD_TOKEN}',
+            f'{settings.BASENAME_AUTHENTICATE}-{self.PATH_SET_PASSWORD_TOKEN}',
             request=request
         )
 
