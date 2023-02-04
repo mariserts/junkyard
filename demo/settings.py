@@ -67,10 +67,13 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'demo.urls'
 
+TEMPLATES_DIR = 'templates'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [
+            TEMPLATES_DIR,
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -162,6 +165,7 @@ OAUTH2_PROVIDER_APPLICATION_MODEL='junkyard_api.Application'
 
 
 OAUTH2_PROVIDER = {
+    'PKCE_REQUIRED': False,
     'SCOPES': {
         'read': 'Read scope',
         'write': 'Write scope',

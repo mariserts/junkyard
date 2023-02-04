@@ -23,12 +23,13 @@ class SigningViewSet(
 ):
 
     queryset = QuerySet()
+    serializer_class = SigningSerializer
 
-    def get_serializer(
+    def get_serializer_class(
         self: BaseViewSet
     ) -> serializers.Serializer:
         if self.request.path.endswith('/sign/'):
-            return SigningSerializer
+            return self.serializer_class
         return UnSigningSerializer
 
     @action(

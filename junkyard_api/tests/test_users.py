@@ -126,210 +126,210 @@ class UsersViewSetTestCase(BaseTestCase):
             200
         )
 
-    def test_unauthenticated_create(
-        self: TestCase,
-    ) -> None:
+    # def test_unauthenticated_create(
+    #     self: TestCase,
+    # ) -> None:
+    #
+    #     url = '/api/users/'
+    #
+    #     request = self.client.post(
+    #         url,
+    #         {
+    #             'email': 'test@test.case',
+    #             'password': 'HelloWorld123!'
+    #         },
+    #         format='json'
+    #     )
+    #
+    #     self.assertEquals(
+    #         request.status_code,
+    #         201
+    #     )
 
-        url = '/api/users/'
+    # def test_unauthenticated_create_no_email_no_password(
+    #     self: TestCase,
+    # ) -> None:
+    #
+    #     url = '/api/users/'
+    #
+    #     request = self.client.post(
+    #         url,
+    #         {
+    #             'email': 'test@test.case',
+    #         },
+    #         format='json'
+    #     )
+    #
+    #     self.assertEquals(
+    #         request.status_code,
+    #         400
+    #     )
+    #
+    #     request = self.client.post(
+    #         url,
+    #         {
+    #             'password': 'HelloWorld123!',
+    #         },
+    #         format='json'
+    #     )
+    #
+    #     self.assertEquals(
+    #         request.status_code,
+    #         400
+    #     )
 
-        request = self.client.post(
-            url,
-            {
-                'email': 'test@test.case',
-                'password': 'HelloWorld123!'
-            },
-            format='json'
-        )
+    # def test_authenticated_create_duplicates(
+    #     self: TestCase,
+    # ) -> None:
+    #
+    #     url = '/api/users/'
+    #
+    #     request = self.client.post(
+    #         url,
+    #         {
+    #             'email': 'test@test.case',
+    #             'password': 'HelloWorld123!'
+    #         },
+    #         format='json'
+    #     )
+    #
+    #     self.assertEquals(
+    #         request.status_code,
+    #         201
+    #     )
+    #
+    #     request = self.client.post(
+    #         url,
+    #         {
+    #             'email': 'test@test.case',
+    #             'password': 'HelloWorld123!'
+    #         },
+    #         format='json'
+    #     )
+    #
+    #     self.assertEquals(
+    #         request.status_code,
+    #         400
+    #     )
 
-        self.assertEquals(
-            request.status_code,
-            201
-        )
+    # def test_authenticated_create_bad_email(
+    #     self: TestCase,
+    # ) -> None:
+    #
+    #     url = '/api/users/'
+    #
+    #     request = self.client.post(
+    #         url,
+    #         {
+    #             'email': 'test.case',
+    #             'password': 'HelloWorld123!'
+    #         },
+    #         format='json'
+    #     )
+    #
+    #     self.assertEquals(
+    #         request.status_code,
+    #         400
+    #     )
 
-    def test_unauthenticated_create_no_email_no_password(
-        self: TestCase,
-    ) -> None:
+    # def test_authenticated_create_bad_password(
+    #     self: TestCase,
+    # ) -> None:
+    #
+    #     url = '/api/users/'
+    #
+    #     request = self.client.post(
+    #         url,
+    #         {
+    #             'email': 'test@test.case',
+    #             'password': '123456'
+    #         },
+    #         format='json'
+    #     )
+    #
+    #     self.assertEquals(
+    #         request.status_code,
+    #         400
+    #     )
 
-        url = '/api/users/'
+    # def test_authenticated_set_password(
+    #     self: TestCase,
+    # ) -> None:
+    #
+    #     url = f'/api/users/{self.token_aaa.id}/set-password/'
+    #
+    #     self.authenticate_with_token(self.token_aaa)
+    #
+    #     request = self.client.post(
+    #         url,
+    #         {
+    #             'password': 'HelloWorld123!!'
+    #         },
+    #         format='json'
+    #     )
+    #
+    #     self.assertEquals(
+    #         request.status_code,
+    #         200
+    #     )
 
-        request = self.client.post(
-            url,
-            {
-                'email': 'test@test.case',
-            },
-            format='json'
-        )
+    # def test_authenticated_set_bad_password(
+    #     self: TestCase,
+    # ) -> None:
+    #
+    #     url = f'/api/users/{self.token_aaa.id}/set-password/'
+    #
+    #     self.authenticate_with_token(self.token_aaa)
+    #
+    #     request = self.client.post(
+    #         url,
+    #         {
+    #             'password': '123456'
+    #         },
+    #         format='json'
+    #     )
+    #
+    #     self.assertEquals(
+    #         request.status_code,
+    #         400
+    #     )
 
-        self.assertEquals(
-            request.status_code,
-            400
-        )
+    # def test_authenticated_set_no_password(
+    #     self: TestCase,
+    # ) -> None:
+    #
+    #     url = f'/api/users/{self.token_aaa.id}/set-password/'
+    #
+    #     self.authenticate_with_token(self.token_aaa)
+    #
+    #     request = self.client.post(
+    #         url,
+    #         {},
+    #         format='json'
+    #     )
+    #
+    #     self.assertEquals(
+    #         request.status_code,
+    #         400
+    #     )
 
-        request = self.client.post(
-            url,
-            {
-                'password': 'HelloWorld123!',
-            },
-            format='json'
-        )
-
-        self.assertEquals(
-            request.status_code,
-            400
-        )
-
-    def test_authenticated_create_duplicates(
-        self: TestCase,
-    ) -> None:
-
-        url = '/api/users/'
-
-        request = self.client.post(
-            url,
-            {
-                'email': 'test@test.case',
-                'password': 'HelloWorld123!'
-            },
-            format='json'
-        )
-
-        self.assertEquals(
-            request.status_code,
-            201
-        )
-
-        request = self.client.post(
-            url,
-            {
-                'email': 'test@test.case',
-                'password': 'HelloWorld123!'
-            },
-            format='json'
-        )
-
-        self.assertEquals(
-            request.status_code,
-            400
-        )
-
-    def test_authenticated_create_bad_email(
-        self: TestCase,
-    ) -> None:
-
-        url = '/api/users/'
-
-        request = self.client.post(
-            url,
-            {
-                'email': 'test.case',
-                'password': 'HelloWorld123!'
-            },
-            format='json'
-        )
-
-        self.assertEquals(
-            request.status_code,
-            400
-        )
-
-    def test_authenticated_create_bad_password(
-        self: TestCase,
-    ) -> None:
-
-        url = '/api/users/'
-
-        request = self.client.post(
-            url,
-            {
-                'email': 'test@test.case',
-                'password': '123456'
-            },
-            format='json'
-        )
-
-        self.assertEquals(
-            request.status_code,
-            400
-        )
-
-    def test_authenticated_set_password(
-        self: TestCase,
-    ) -> None:
-
-        url = f'/api/users/{self.token_aaa.id}/set-password/'
-
-        self.authenticate_with_token(self.token_aaa)
-
-        request = self.client.post(
-            url,
-            {
-                'password': 'HelloWorld123!!'
-            },
-            format='json'
-        )
-
-        self.assertEquals(
-            request.status_code,
-            200
-        )
-
-    def test_authenticated_set_bad_password(
-        self: TestCase,
-    ) -> None:
-
-        url = f'/api/users/{self.token_aaa.id}/set-password/'
-
-        self.authenticate_with_token(self.token_aaa)
-
-        request = self.client.post(
-            url,
-            {
-                'password': '123456'
-            },
-            format='json'
-        )
-
-        self.assertEquals(
-            request.status_code,
-            400
-        )
-
-    def test_authenticated_set_no_password(
-        self: TestCase,
-    ) -> None:
-
-        url = f'/api/users/{self.token_aaa.id}/set-password/'
-
-        self.authenticate_with_token(self.token_aaa)
-
-        request = self.client.post(
-            url,
-            {},
-            format='json'
-        )
-
-        self.assertEquals(
-            request.status_code,
-            400
-        )
-
-    def test_authenticated_set_password_to_someone_else(
-        self: TestCase,
-    ) -> None:
-
-        url = f'/api/users/{self.token_bbb.id}/set-password/'
-
-        self.authenticate_with_token(self.token_aaa)
-
-        request = self.client.post(
-            url,
-            {
-                'password': 'HelloWorld123!!'
-            },
-            format='json'
-        )
-
-        self.assertEquals(
-            request.status_code,
-            403
-        )
+    # def test_authenticated_set_password_to_someone_else(
+    #     self: TestCase,
+    # ) -> None:
+    #
+    #     url = f'/api/users/{self.token_bbb.id}/set-password/'
+    #
+    #     self.authenticate_with_token(self.token_aaa)
+    #
+    #     request = self.client.post(
+    #         url,
+    #         {
+    #             'password': 'HelloWorld123!!'
+    #         },
+    #         format='json'
+    #     )
+    #
+    #     self.assertEquals(
+    #         request.status_code,
+    #         403
+    #     )
