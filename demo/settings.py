@@ -25,7 +25,11 @@ SECRET_KEY = 'django-insecure-ah0m(&%cj4hwrnj&k0idrv500m7+^_hb8s)%&+1z#f0k5po=vf
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    '0.0.0.0',
+    '127.0.0.1',
+    'localhost',
+]
 
 
 # Application definition
@@ -165,11 +169,10 @@ OAUTH2_PROVIDER_APPLICATION_MODEL='junkyard_api.Application'
 
 
 OAUTH2_PROVIDER = {
-    'PKCE_REQUIRED': False,
+    'OAUTH2_BACKEND_CLASS': 'oauth2_provider.oauth2_backends.JSONOAuthLibCore',
     'SCOPES': {
         'read': 'Read scope',
         'write': 'Write scope',
-        'groups': 'Access to your groups'
     }
 }
 

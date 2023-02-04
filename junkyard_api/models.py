@@ -52,7 +52,7 @@ class User(AbstractUser):
 
             Application.objects.create(
                 user=self,
-                name=f'{self.email} {Application.GRANT_CLIENT_CREDENTIALS}',
+                name=self.email,
                 client_type=Application.CLIENT_PUBLIC,
                 authorization_grant_type=Application.GRANT_CLIENT_CREDENTIALS
             )

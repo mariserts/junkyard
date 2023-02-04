@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from typing import List
 
+import requests
+
 from django.contrib.auth import authenticate
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
@@ -8,13 +10,14 @@ from django.core.mail import EmailMultiAlternatives
 from django.core.signing import BadSignature, SignatureExpired
 from django.core.validators import validate_email
 from django.db.models.query import QuerySet
+from django.utils.decorators import method_decorator
+from django.views.decorators.debug import sensitive_post_parameters
 
 from rest_framework import permissions, serializers, viewsets
 from rest_framework.decorators import action, permission_classes
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.reverse import reverse
-from rest_framework.test import APIClient
 
 from oauth2_provider.models import AccessToken
 
@@ -74,25 +77,22 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
         name='Register',
         url_path=PATH_REGISTER,
     )
+    # @method_decorator(sensitive_post_parameters('password'))
     @permission_classes([permissions.AllowAny, ])
     def register(
         self: viewsets.GenericViewSet,
         request: Request
     ) -> Response:
 
-        try:
-            email = request.data['email']
-        except KeyError:
-            raise serializers.ValidationError({
-                'email': ['"email" is required']
-            })
+        serializer = EmailPasswordSerializer(data=request.data)
+        if serializer.is_valid() is False:
+            return Response(
+                serializer.errors,
+                status=400
+            )
 
-        try:
-            password = request.data['password']
-        except KeyError:
-            raise serializers.ValidationError({
-                'password': ['"password" is required']
-            })
+        email = serializer.validated_data['email']
+        password = serializer.validated_data['password']
 
         try:
             validate_email(email)
@@ -114,32 +114,41 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
                 status=400
             )
 
-        user = User.objects.create(email=email)
+        user = User.objects.create(email=email, is_active=True)
         user.set_password(password)
         user.save()
 
-        credentials = self.get_credentials_for_user_id(user.id)
+        try:
+            credentials = self.get_credentials_for_user_id(user.id)
+        except Application.DoesNotExist:
+            return Response(
+                'User does not have application',
+                status=404
+            )
 
-        request = APIClient().post(
-            'http://0.0.0.0:8000/o/token/',
-            data={
-                'grant_type': Application.AUTH_GRANT_CLIENT_CREDENTIALS,
+        request = requests.post(
+            f'{self.get_full_request_hostname()}/o/token/',
+            json={
+                'grant_type': 'client_credentials',
                 'client_id': credentials[0],
                 'client_secret': credentials[1],
             },
+            headers={
+                'content-type': 'application/json',
+            },
         )
 
-        return Response(request.json())
+        if request.ok is True:
+            return Response(
+                request.json(),
+                status=201
+            )
 
-    @action(
-        detail=False,
-        methods=['POST'],
-        name='Register',
-        url_path=PATH_REGISTER,
-    )
-    @permission_classes([permissions.IsAuthenticated, ])
-    def profile(self, request):
-        return Response()
+        return Response(
+            request.json(),
+            status=request.status_code,
+            content_type='application/json',
+        )
 
     @action(
         detail=False,
@@ -147,46 +156,62 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
         name='Sign in',
         url_path=PATH_SIGN_IN,
     )
+    # @method_decorator(sensitive_post_parameters('password'))
     @permission_classes([permissions.AllowAny, ])
     def sign_in(
         self: viewsets.GenericViewSet,
         request: Request
     ) -> Response:
 
-        try:
-            email = request.data['email']
-        except KeyError:
-            raise serializers.ValidationError({
-                'email': ['"email" is required']
-            })
-
-        try:
-            password = request.data['password']
-        except KeyError:
-            raise serializers.ValidationError({
-                'password': ['"password" is required']
-            })
-
-        try:
-            user = self.get_user_for_username_and_password(email, password)
-        except User.DoesNotExist as e:
+        serializer = EmailPasswordSerializer(data=request.data)
+        if serializer.is_valid() is False:
             return Response(
-                e.msg,
+                serializer.errors,
+                status=400
+            )
+
+        email = serializer.validated_data['email']
+        password = serializer.validated_data['password']
+
+        try:
+            user = self.get_user_for_email_and_password(email, password)
+        except User.DoesNotExist:
+            return Response(
+                'User credentials are incorrect',
                 status=404
             )
 
-        credentials = self.get_credentials_for_user_id(user.id)
+        try:
+            credentials = self.get_credentials_for_user_id(user.id)
+        except Application.DoesNotExist:
+            return Response(
+                'User does not have application',
+                status=404
+            )
 
-        request = APIClient().post(
-            'http://0.0.0.0:8000/o/token/',
-            data={
-                'grant_type': Application.AUTH_GRANT_CLIENT_CREDENTIALS,
+        request = requests.post(
+            f'{self.get_full_request_hostname()}/o/token/',
+            json={
+                'grant_type': 'client_credentials',
                 'client_id': credentials[0],
                 'client_secret': credentials[1],
             },
+            headers={
+                'content-type': 'application/json',
+            },
         )
 
-        return Response(request.json())
+        if request.ok is True:
+            return Response(
+                request.json(),
+                status=200
+            )
+
+        return Response(
+            request.json(),
+            status=request.status_code,
+            content_type='application/json'
+        )
 
     @action(
         detail=False,
@@ -223,16 +248,16 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
 
         credentials = self.get_credentials_for_user_id(user.id)
 
-        request = APIClient().post(
-            'http://0.0.0.0:8000/o/revoke_token/',
-            data={
+        request = requests.post(
+            f'{self.get_full_request_hostname()}/o/revoke_token/',
+            json={
                 'token': token,
                 'client_id': credentials[0],
                 'client_secret': credentials[1],
             },
         )
 
-        if request.status_code in [200, 201, 202]:
+        if request.ok is True:
             return Response(
                 {'message': 'token revoked'},
                 request.status_code
@@ -240,7 +265,8 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
 
         return Response(
             request.json(),
-            request.status_code
+            status=request.status_code,
+            content_type='application/json',
         )
 
     @action(
@@ -249,6 +275,7 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
         name='Change password',
         url_path=PATH_SET_PASSWORD,
     )
+    # @method_decorator(sensitive_post_parameters('password'))
     @permission_classes([permissions.IsAuthenticated, ])
     def set_password(
         self: viewsets.GenericViewSet,
@@ -282,6 +309,7 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
         name='Change password with token',
         url_path=PATH_SET_PASSWORD_TOKEN,
     )
+    @method_decorator(sensitive_post_parameters('password'))
     @permission_classes([permissions.AllowAny, ])
     def set_password_with_token(
         self: viewsets.GenericViewSet,
@@ -410,11 +438,7 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
             max_age=30*60
         )
 
-        url = 'http'
-        if request.is_secure is True:
-            url += 's'
-        url += '://'
-        url += request.get_host()
+        url = self.get_full_request_hostname()
         url += reverse(
             f'{settings.BASENAME_AUTHENTICATE}-{self.PATH_SET_PASSWORD_TOKEN}',
             request=request
@@ -460,6 +484,14 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
         )
         msg.send()
 
+    def get_full_request_hostname(self):
+        hostname = 'http'
+        if self.request.is_secure is True:
+            hostname += 's'
+        hostname += '://'
+        hostname += self.request.get_host()
+        return hostname
+
     def get_user_for_token(
         self: viewsets.GenericViewSet,
         token: str,
@@ -469,17 +501,15 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
 
         return access_token.user
 
-    def get_user_for_username_and_password(
+    def get_user_for_email_and_password(
         self: viewsets.GenericViewSet,
         email: str,
         password: str,
     ) -> User:
 
         user = authenticate(username=email, password=password)
-        if user is not None:
-            raise User.DoesNotExist(
-                f'User with email "{email}" does not exist'
-            )
+        if user is None:
+            raise User.DoesNotExist()
 
         return user
 
