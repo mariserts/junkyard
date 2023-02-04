@@ -4,8 +4,9 @@ from django.conf import settings as dj_settings
 
 class Settings:
 
-    BASENAME_AUTHENTICATE = 'authenticate'
-    PATH_AUTHENTICATE = r'authenticate'
+    @property
+    def BASENAME_AUTHENTICATE(self):
+        return 'authenticate'
 
     @property
     def CASCADE_TENANT_PERMISSIONS(self):
@@ -32,6 +33,10 @@ class Settings:
     @property
     def LANGUAGE_DEFAULT(self):
         return self.LANGUAGE_ENGLISH[0]
+
+    @property
+    def PATH_AUTHENTICATE(self):
+        return r'authenticate'
 
 
 settings = Settings()
