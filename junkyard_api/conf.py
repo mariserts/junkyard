@@ -1,8 +1,18 @@
 # -*- coding: utf-8 -*-
+import os
+
 from django.conf import settings as dj_settings
 
 
 class Settings:
+
+    @property
+    def API_CLIENT_ID(self):
+        return os.getenv('API_CLIENT_ID')
+
+    @property
+    def API_CLIENT_SECRET(self):
+        return os.getenv('API_CLIENT_SECRET')
 
     @property
     def BASENAME_AUTHENTICATE(self):

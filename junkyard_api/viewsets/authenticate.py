@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from typing import List
-
 import requests
 
 from django.contrib.auth import authenticate
@@ -10,8 +8,6 @@ from django.core.mail import EmailMultiAlternatives
 from django.core.signing import BadSignature, SignatureExpired
 from django.core.validators import validate_email
 from django.db.models.query import QuerySet
-from django.utils.decorators import method_decorator
-from django.views.decorators.debug import sensitive_post_parameters
 
 from rest_framework import permissions, serializers, viewsets
 from rest_framework.decorators import action, permission_classes
@@ -38,6 +34,8 @@ from ..signers.exceptions import (
 from ..signers.sign import sign_object
 from ..signers.unsign import unsign_object
 
+from oauth2_provider.contrib.rest_framework import OAuth2Authentication
+
 
 class AuthenticationViewSet(viewsets.GenericViewSet):
 
@@ -48,6 +46,7 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
     PATH_SIGN_IN = 'sign-in'
     PATH_SIGN_OUT = 'sign-out'
 
+    authentication_classes = (OAuth2Authentication, )
     queryset = QuerySet()
 
     def get_serializer_class(
@@ -77,7 +76,6 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
         name='Register',
         url_path=PATH_REGISTER,
     )
-    # @method_decorator(sensitive_post_parameters('password'))
     @permission_classes([permissions.AllowAny, ])
     def register(
         self: viewsets.GenericViewSet,
@@ -118,20 +116,14 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
         user.set_password(password)
         user.save()
 
-        try:
-            credentials = self.get_credentials_for_user_id(user.id)
-        except Application.DoesNotExist:
-            return Response(
-                'User does not have application',
-                status=404
-            )
-
         request = requests.post(
             f'{self.get_full_request_hostname()}/o/token/',
             json={
-                'grant_type': 'client_credentials',
-                'client_id': credentials[0],
-                'client_secret': credentials[1],
+                'grant_type': Application.GRANT_PASSWORD,
+                'username': email,
+                'password': password,
+                'client_id': settings.API_CLIENT_ID,
+                'client_secret': settings.API_CLIENT_SECRET,
             },
             headers={
                 'content-type': 'application/json',
@@ -147,7 +139,6 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
         return Response(
             request.json(),
             status=request.status_code,
-            content_type='application/json',
         )
 
     @action(
@@ -156,7 +147,6 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
         name='Sign in',
         url_path=PATH_SIGN_IN,
     )
-    # @method_decorator(sensitive_post_parameters('password'))
     @permission_classes([permissions.AllowAny, ])
     def sign_in(
         self: viewsets.GenericViewSet,
@@ -173,28 +163,14 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
         email = serializer.validated_data['email']
         password = serializer.validated_data['password']
 
-        try:
-            user = self.get_user_for_email_and_password(email, password)
-        except User.DoesNotExist:
-            return Response(
-                'User credentials are incorrect',
-                status=404
-            )
-
-        try:
-            credentials = self.get_credentials_for_user_id(user.id)
-        except Application.DoesNotExist:
-            return Response(
-                'User does not have application',
-                status=404
-            )
-
         request = requests.post(
             f'{self.get_full_request_hostname()}/o/token/',
             json={
-                'grant_type': 'client_credentials',
-                'client_id': credentials[0],
-                'client_secret': credentials[1],
+                'grant_type': Application.GRANT_PASSWORD,
+                'username': email,
+                'password': password,
+                'client_id': settings.API_CLIENT_ID,
+                'client_secret': settings.API_CLIENT_SECRET,
             },
             headers={
                 'content-type': 'application/json',
@@ -204,13 +180,12 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
         if request.ok is True:
             return Response(
                 request.json(),
-                status=200
+                status=201
             )
 
         return Response(
             request.json(),
             status=request.status_code,
-            content_type='application/json'
         )
 
     @action(
@@ -219,7 +194,7 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
         name='Sign out',
         url_path=PATH_SIGN_OUT,
     )
-    @permission_classes([permissions.AllowAny, ])
+    @permission_classes((permissions.IsAuthenticated))
     def sign_out(
         self: viewsets.GenericViewSet,
         request: Request
@@ -236,7 +211,7 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
             user = self.get_user_for_token(token)
         except AccessToken.DoesNotExist:
             return Response(
-                'Token doe not exist',
+                'Token does not exist',
                 status=404
             )
 
@@ -246,14 +221,12 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
                 status=403
             )
 
-        credentials = self.get_credentials_for_user_id(user.id)
-
         request = requests.post(
             f'{self.get_full_request_hostname()}/o/revoke_token/',
             json={
                 'token': token,
-                'client_id': credentials[0],
-                'client_secret': credentials[1],
+                'client_id': settings.API_CLIENT_ID,
+                'client_secret': settings.API_CLIENT_SECRET,
             },
         )
 
@@ -275,7 +248,6 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
         name='Change password',
         url_path=PATH_SET_PASSWORD,
     )
-    # @method_decorator(sensitive_post_parameters('password'))
     @permission_classes([permissions.IsAuthenticated, ])
     def set_password(
         self: viewsets.GenericViewSet,
@@ -309,7 +281,6 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
         name='Change password with token',
         url_path=PATH_SET_PASSWORD_TOKEN,
     )
-    @method_decorator(sensitive_post_parameters('password'))
     @permission_classes([permissions.AllowAny, ])
     def set_password_with_token(
         self: viewsets.GenericViewSet,
@@ -497,7 +468,17 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
         token: str,
     ) -> User:
 
-        access_token = AccessToken.objects.get(token=token)
+        access_token = AccessToken.objects.filter(
+            token=token
+        ).select_related(
+            'application'
+        ).first()
+
+        if access_token is None:
+            raise AccessToken.DoesNotExist()
+
+        if access_token.user is None:
+            return access_token.application.user
 
         return access_token.user
 
@@ -512,18 +493,3 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
             raise User.DoesNotExist()
 
         return user
-
-    def get_credentials_for_user_id(
-        self: viewsets.GenericViewSet,
-        user_id: int
-    ) -> List[str]:
-
-        application = Application.objects.get(
-            user_id=user_id,
-            authorization_grant_type=Application.GRANT_CLIENT_CREDENTIALS
-        )
-
-        return [
-            application.client_id,
-            application.raw_client_secret
-        ]

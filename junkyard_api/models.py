@@ -41,21 +41,21 @@ class User(AbstractUser):
 
     def save(self, *args, **kwargs):
 
-        creation = self.id is None
+        # creation = self.id is None
 
         self.email = self.email.lower()
         self.username = self.email
 
         super(User, self).save(*args, **kwargs)
 
-        if creation is True:
-
-            Application.objects.create(
-                user=self,
-                name=self.email,
-                client_type=Application.CLIENT_PUBLIC,
-                authorization_grant_type=Application.GRANT_CLIENT_CREDENTIALS
-            )
+        # if creation is True:
+        #
+        #     Application.objects.create(
+        #         user=self,
+        #         name=self.email,
+        #         client_type=Application.CLIENT_PUBLIC,
+        #         authorization_grant_type=Application.GRANT_CLIENT_CREDENTIALS
+        #     )
 
 
 class Tenant(models.Model):

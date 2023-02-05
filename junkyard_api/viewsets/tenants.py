@@ -6,6 +6,8 @@ from django.db.models.query import QuerySet
 
 from rest_framework import mixins
 
+from oauth2_provider.contrib.rest_framework import OAuth2Authentication
+
 from ..conf import settings
 from ..filtersets.tenants import TenantsFilterSet
 from ..models import Tenant
@@ -24,6 +26,7 @@ class TenantsViewSet(
     BaseViewSet
 ):
 
+    authentication_classes = (OAuth2Authentication, )
     filterset_class: Final = TenantsFilterSet
     ordering_fields: Final = ('id', )
     permission_classes: Final = BaseViewSet.permission_classes + [
