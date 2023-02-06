@@ -1,39 +1,31 @@
 # -*- coding: utf-8 -*-
-from typing import Type, Union
+from typing import Type
 
-from django.core.signing import BadSignature, Signer
 from django.views import View
 
-from ..conf import settings
+from ..mixins import SessionTokenRequiredMixin, UnAuthenticatedUserRequired
+from ..signing import sign
 
 
 class BaseViewSet(View):
 
-    def get_session_id_cookie(self):
-
-        return self.request.COOKIES.get(
-            settings.COOKIE_NAME_SESSION_ID,
-            None
-        )
-
-    def get_token(
-        self: Type,
-    ) -> Union[None, str]:
-
-        token = self.get_session_id_cookie()
-
-        if token is None:
-            return None
-
-        try:
-            return Signer().unsign_object(token)
-        except BadSignature:
-            return None
-
-        return None
-
     def sign_token(
         self: Type,
         token: str,
+        max_age: int,
     ) -> str:
-        return Signer().sign_object(token)
+        return sign(token, max_age)
+
+
+class AuthenticatedViewSet(
+    SessionTokenRequiredMixin,
+    BaseViewSet
+):
+    pass
+
+
+class UnAuthenticatedViewSet(
+    UnAuthenticatedUserRequired,
+    BaseViewSet
+):
+    pass

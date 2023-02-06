@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from typing import Type
 from django.contrib import messages
 from django.http.request import HttpRequest
 from django.shortcuts import HttpResponse, redirect, render, reverse
@@ -13,16 +14,19 @@ from ..clients.exceptions import (
     HTTPError
 )
 from ..forms.sign_in import SignInForm
+from ..signing import sign
 
-from .base import BaseViewSet
+from .base import UnAuthenticatedViewSet
 
 
-class SignInViewSet(BaseViewSet):
+class SignInViewSet(
+    UnAuthenticatedViewSet
+):
 
     template = 'junkyard_app/pages/authentication.html'
 
     def get_context(
-        self: BaseViewSet
+        self: Type
     ):
 
         if self.request.method == 'POST':
@@ -55,7 +59,7 @@ class SignInViewSet(BaseViewSet):
         }
 
     def get(
-        self: BaseViewSet,
+        self: Type,
         request: HttpRequest,
     ) -> HttpResponse:
         return render(
@@ -66,7 +70,7 @@ class SignInViewSet(BaseViewSet):
 
     @method_decorator(sensitive_post_parameters(['password']))
     def post(
-        self: BaseViewSet,
+        self: Type,
         request: HttpRequest,
     ) -> HttpResponse:
 
@@ -129,7 +133,13 @@ class SignInViewSet(BaseViewSet):
 
         response.set_cookie(
             settings.COOKIE_NAME_SESSION_ID,
-            self.sign_token(data['access_token']),
+            sign(
+                {
+                    'access_token': data['access_token'],
+                    'user': data['user'],
+                },
+                max_age=data['expires_in']
+            ),
             max_age=data['expires_in']
         )
 

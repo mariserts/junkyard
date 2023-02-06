@@ -131,8 +131,15 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
         )
 
         if request.ok is True:
+
+            response_data = request.json()
+            response_data['user'] = {
+                'id': user.id,
+                'email': user.email
+            }
+
             return Response(
-                request.json(),
+                response_data,
                 status=201
             )
 
@@ -163,6 +170,13 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
         email = serializer.validated_data['email']
         password = serializer.validated_data['password']
 
+        user = self.get_user_for_email_and_password(email, password)
+        if user is None:
+            return Response(
+                'Invalid credentials',
+                status=404
+            )
+
         request = requests.post(
             f'{self.get_full_request_hostname()}/o/token/',
             json={
@@ -178,8 +192,15 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
         )
 
         if request.ok is True:
+
+            response_data = request.json()
+            response_data['user'] = {
+                'id': user.id,
+                'email': user.email
+            }
+
             return Response(
-                request.json(),
+                response_data,
                 status=201
             )
 

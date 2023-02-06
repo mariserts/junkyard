@@ -11,6 +11,8 @@ from drf_yasg import openapi
 from .conf import settings
 
 from .viewsets.authenticate import AuthenticationViewSet
+from .viewsets.item_types import ItemTypesViewSet
+from .viewsets.items import ItemsViewSet
 from .viewsets.languages import LanguagesViewSet
 from .viewsets.public_items import PublicItemsViewSet
 from .viewsets.signing import SigningViewSet
@@ -47,6 +49,16 @@ router.register(
     settings.PATH_AUTHENTICATE,
     AuthenticationViewSet,
     basename=settings.BASENAME_AUTHENTICATE
+)
+router.register(
+    r'item-types',
+    ItemTypesViewSet,
+    basename='item-types'
+)
+router.register(
+    r'items',
+    ItemsViewSet,
+    basename='items'
 )
 router.register(
     r'languages',

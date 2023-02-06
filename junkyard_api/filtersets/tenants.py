@@ -3,7 +3,7 @@ from django.db.models.query import QuerySet
 
 from django_filters import BooleanFilter, FilterSet, NumberFilter
 
-from ..models import Tenant
+from ..models import User, Tenant
 
 
 class TenantsFilterSet(FilterSet):
@@ -13,12 +13,23 @@ class TenantsFilterSet(FilterSet):
     is_root = BooleanFilter(method='filter_by_is_root')
     predecessors_of = NumberFilter(method='filter_by_predecessors_of')
     successors_of = NumberFilter(method='filter_by_successors_of')
+    user = NumberFilter(method='filter_by_available_to_user_id')
 
     class Meta:
         model = Tenant
         fields = [
             'is_root',
         ]
+
+    def filter_by_available_to_user_id(
+        self,
+        queryset: QuerySet,
+        name: str,
+        value: int
+    ) -> QuerySet:
+        tenant_ids = User.get_tenants(value, format='ids')
+        queryset = queryset.filter(pk__in=tenant_ids)
+        return queryset
 
     def filter_by_all_predecessors_of(
         self,

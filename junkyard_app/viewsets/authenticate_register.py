@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from typing import Type
+
 from django.contrib import messages
 from django.http.request import HttpRequest
 from django.shortcuts import HttpResponse, redirect, render, reverse
@@ -14,15 +16,17 @@ from ..clients.exceptions import (
 )
 from ..forms.register import RegisterForm
 
-from .base import BaseViewSet
+from .base import UnAuthenticatedViewSet
 
 
-class RegisterViewSet(BaseViewSet):
+class RegisterViewSet(
+    UnAuthenticatedViewSet
+):
 
     template = 'junkyard_app/pages/authentication.html'
 
     def get_context(
-        self: BaseViewSet
+        self: Type
     ):
 
         form = RegisterForm()
@@ -54,7 +58,7 @@ class RegisterViewSet(BaseViewSet):
         }
 
     def get(
-        self: BaseViewSet,
+        self: Type,
         request: HttpRequest,
     ) -> HttpResponse:
         return render(
@@ -68,7 +72,7 @@ class RegisterViewSet(BaseViewSet):
         'repeat_password'
     ]))
     def post(
-        self: BaseViewSet,
+        self: Type,
         request: HttpRequest,
     ) -> HttpResponse:
 

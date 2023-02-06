@@ -13,6 +13,10 @@ class Settings:
         return 'junkyard_app_sessionid'
 
     @property
+    def REQUEST_TOKEN_ATTR_NAME(self):
+        return 'junkyard_token'
+
+    @property
     def URLNAME_CMS_HOME(self):
         return 'cms_home'
 
