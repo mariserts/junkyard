@@ -5,12 +5,16 @@ from rest_framework import serializers
 
 from ..conf import settings
 from ..exceptions import ItemTypeNotFoundException
-from ..models import Item, ItemRelation, SearchVector, Tenant
+from ..models import Item, ItemRelation, SearchVector, Tenant, User
 
 from .item_relations import NestedItemRelationSerializer
+from .mixins import ItemShortcutsMixin
 
 
-class ItemSerializer(serializers.ModelSerializer):
+class ItemSerializer(
+    ItemShortcutsMixin,
+    serializers.ModelSerializer
+):
 
     _existing_relations_ids = []
     _createble_relations = []
@@ -37,6 +41,10 @@ class ItemSerializer(serializers.ModelSerializer):
 
         field = self.fields['item_type']
         field.choices = settings.ITEM_TYPE_REGISTRY.get_types(format='choices')
+
+    #
+    # Representation
+    #
 
     def to_representation(
         self: serializers.BaseSerializer,
@@ -65,7 +73,7 @@ class ItemSerializer(serializers.ModelSerializer):
                 context = self.context.copy()
                 context['_nested'] = False
 
-                # Doubles amount of validation?
+                # XXXX perf issues: Doubles amount of validation?
                 output_data = serializer(instance, context=context).data
 
                 output.append(output_data)
@@ -75,16 +83,25 @@ class ItemSerializer(serializers.ModelSerializer):
 
             return next(iter(output), None)
 
-        data = super().to_representation(object)
+        return super().to_representation(object)
 
-        return data
+    #
+    # Field validation
+    #
 
     def validate_item_type(self, value):
 
+        # Item type can not be changed if item is being updated
+
         if self.instance is not None:
-            tenant_pk = self.instance.tenant_id
+            return self.instance_item_type
+
+        # Check item type when creating item
+
+        if self.instance is not None:
+            tenant_pk = self.instance_item_type
         else:
-            tenant_pk = self._kwargs['data']['tenant']
+            tenant_pk = self.raw_tenant_pk
 
         is_root = Tenant.is_root_tenant(tenant_pk)
 
@@ -101,6 +118,31 @@ class ItemSerializer(serializers.ModelSerializer):
             )
 
         return item_type.name
+
+    def validate_tenant(self, value):
+
+        # Tenant can not be changed if item is updated
+
+        if self.instance is not None:
+            return self.instance.tenant
+
+        # Check tenant when creating item
+
+        if self.request_user is None:
+            raise serializers.ValidationError('No request user found')
+
+        tenant_ids = User.get_tenants(self.request_user, format='ids')
+
+        if value.id not in tenant_ids:
+            raise serializers.ValidationError(
+                f'User has no access to tenant "{value}"'
+            )
+
+        return value
+
+    #
+    # Save
+    #
 
     def save(
         self: serializers.BaseSerializer,
@@ -126,6 +168,29 @@ class ItemSerializer(serializers.ModelSerializer):
         self.manage_search_vectors(instance)
 
         return instance
+
+    #
+    # Pre save actions
+    #
+
+    def pre_save(
+        self: serializers.BaseSerializer,
+    ) -> None:
+
+        """
+
+        Pre save actions to do
+
+        Returns:
+        - None
+
+        """
+
+        pass
+
+    #
+    # Post save actions
+    #
 
     def set_parent_items_management_data(
         self: serializers.BaseSerializer,
@@ -230,21 +295,6 @@ class ItemSerializer(serializers.ModelSerializer):
             ).update(
                 **parent_item
             )
-
-    def pre_save(
-        self: serializers.BaseSerializer,
-    ) -> None:
-
-        """
-
-        Pre save actions to do
-
-        Returns:
-        - None
-
-        """
-
-        pass
 
     def post_save(
         self: serializers.BaseSerializer,

@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
-from typing import Final, List, Union
+from typing import List, Type, Union
 
 from django.db.models.query import QuerySet
-
+from django_filters import rest_framework as filters
+from rest_framework import permissions, viewsets
 from rest_framework.request import Request
 from rest_framework.response import Response
 
@@ -10,19 +11,19 @@ from ..conf import settings
 from ..filtersets.languages import LanguagesFilterSet
 from ..serializers.languages import LanguageSerializer
 
-from .base import BaseViewSet
-
 
 class LanguagesViewSet(
-    BaseViewSet
+    viewsets.GenericViewSet
 ):
 
+    filter_backends = (filters.DjangoFilterBackend, )
     filterset_class = LanguagesFilterSet
-    serializer_class: Final = LanguageSerializer
+    permission_classes = (permissions.AllowAny, )
     queryset = QuerySet()
+    serializer_class = LanguageSerializer
 
     def get_languages(
-        self: BaseViewSet,
+        self: Type,
     ) -> List[dict]:
 
         languages = settings.LANGUAGES
@@ -42,7 +43,7 @@ class LanguagesViewSet(
         return languages
 
     def get_language(
-        self: BaseViewSet,
+        self: Type,
         code: str,
     ) -> dict:
 
@@ -55,7 +56,7 @@ class LanguagesViewSet(
         return None
 
     def list(
-        self: BaseViewSet,
+        self: Type,
         request: Request,
     ) -> Response:
 
@@ -89,7 +90,7 @@ class LanguagesViewSet(
         return Response(data)
 
     def retrieve(
-        self: BaseViewSet,
+        self: Type,
         request: Request,
         pk: Union[None, str] = None
     ) -> Response:

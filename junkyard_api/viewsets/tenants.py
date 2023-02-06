@@ -1,20 +1,14 @@
 # -*- coding: utf-8 -*-
-from typing import Final
+from typing import Type
 
-from django.db.models import Q
 from django.db.models.query import QuerySet
+from django_filters import rest_framework as filters
+from rest_framework import mixins, permissions, viewsets
 
-from rest_framework import mixins
-
-from oauth2_provider.contrib.rest_framework import OAuth2Authentication
-
-from ..conf import settings
 from ..filtersets.tenants import TenantsFilterSet
-from ..models import Tenant
-from ..permissions import TenantUserPermission
+from ..models import Tenant, User
+from ..pagination import JunkyardApiPagination
 from ..serializers.tenants import TenantSerializer
-
-from .base import BaseViewSet
 
 
 class TenantsViewSet(
@@ -22,56 +16,50 @@ class TenantsViewSet(
     # mixins.DestroyModelMixin,
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
-    mixins.UpdateModelMixin,
-    BaseViewSet
+    # mixins.UpdateModelMixin,
+    viewsets.GenericViewSet
 ):
 
-    authentication_classes = (OAuth2Authentication, )
-    filterset_class: Final = TenantsFilterSet
-    ordering_fields: Final = ('id', )
-    permission_classes: Final = BaseViewSet.permission_classes + [
-        TenantUserPermission, ]
-    queryset: Final = Tenant.objects.all()
-    serializer_class: Final = TenantSerializer
+    filter_backends = (filters.DjangoFilterBackend, )
+    filterset_class = TenantsFilterSet
+    ordering_fields = ('id', )
+    pagination_class = JunkyardApiPagination
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly, )
+    queryset = Tenant.objects.all()
+    serializer_class = TenantSerializer
 
-    def get_queryset(
-        self: BaseViewSet,
+    def get_authenticated_queryset(
+        self: Type,
     ) -> QuerySet:
 
-        """
-
-        List tenants where user is owner or admin
-
-        Returns:
-        - QuerySet of tenants
-
-        """
-
-        user_id = self.request.user.id
-        cascade = settings.CASCADE_TENANT_PERMISSIONS
-
-        condition = Q()
-        condition.add(Q(owner_id=user_id), Q.OR)
-        condition.add(Q(admins__user_id=user_id), Q.OR)
+        tenant_ids = User.get_tenants(self.request.user, format='ids')
 
         queryset = self.queryset.filter(
-            condition
+            id__in=tenant_ids,
+            is_active=True
         ).order_by(
             *self.ordering_fields
-        )
+        ).distinct()
 
-        if cascade is False:
-            return queryset
+        return queryset
 
-        ids = []
-        for tenant in queryset:
-            ids.append(tenant.id)
-            ids += Tenant.get_all_children_ids(tenant)
+    def get_unauthenticated_queryset(
+        self: Type,
+    ) -> QuerySet:
 
-        ids = list(set(ids))
-
-        return Tenant.objects.filter(
-            id__in=ids
+        queryset = self.queryset.filter(
+            is_active=True
         ).order_by(
             *self.ordering_fields
-        )
+        ).distinct()
+
+        return queryset
+
+    def get_queryset(
+        self: Type,
+    ) -> QuerySet:
+
+        if self.request.user.is_authenticated is True:
+            return self.get_authenticated_queryset()
+
+        return self.get_unauthenticated_queryset()

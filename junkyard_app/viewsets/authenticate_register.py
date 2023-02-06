@@ -131,9 +131,9 @@ class RegisterViewSet(
             )
             return error_response
 
-        response = redirect(settings.URLNAME_CMS_HOME)
+        response = redirect(settings.URLNAME_CMS_HOMEPAGE)
 
-        self.set_response_session_cookie(
+        self.set_session_cookie(
             response,
             {
                 'access_token': data['access_token'],

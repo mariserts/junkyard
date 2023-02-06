@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from typing import Union
+from typing import Type, Union
 
 from django.db.models.query import QuerySet
 
@@ -10,7 +10,7 @@ from ..models import TenantAdmin
 from .filters import EmptyMultipleChoiceFilter
 
 
-class TenantAdminsFilterSet(FilterSet):
+class AdminsFilterSet(FilterSet):
 
     email = EmptyMultipleChoiceFilter(method='filter_by_email')
 
@@ -21,7 +21,7 @@ class TenantAdminsFilterSet(FilterSet):
         ]
 
     def filter_by_email(
-        self,
+        self: Type,
         queryset: QuerySet,
         name: str,
         value: Union[str, None]
@@ -31,6 +31,6 @@ class TenantAdminsFilterSet(FilterSet):
             user__email__in=value
         ).prefetch_related(
             'user',
-        )
+        ).distinct()
 
         return queryset

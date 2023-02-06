@@ -10,7 +10,7 @@ from ..clients.tenants import TenantsClient
 from .base import AuthenticatedViewSet
 
 
-class CmsHomeViewSet(
+class CmsHomePageViewSet(
     AuthenticatedViewSet
 ):
 
@@ -20,9 +20,9 @@ class CmsHomeViewSet(
         self: Type
     ):
 
-        access_token = self.get_api_token()
+        context = super().get_context()
 
-        filter_form = None
+        access_token = self.get_api_token()
 
         item_types = ItemTypesClient().get_item_types(
             access_token
@@ -41,20 +41,18 @@ class CmsHomeViewSet(
             count=1000000
         )
 
-        return {
-            'page': {
-                'title': 'CMS Overview',
-                'subtitle': None
-            },
-            'forms': {
-                'filter': filter_form,
-            },
-            'results': {
-                'item_types': item_types,
-                'items': items,
-                'tenants': tenants,
-            },
+        context['page'] = {
+            'title': 'CMS Overview',
+            'subtitle': None
         }
+
+        context['results'] = {
+            'item_types': item_types,
+            'items': items,
+            'tenants': tenants,
+        }
+
+        return context
 
     def get(
         self: Type,
