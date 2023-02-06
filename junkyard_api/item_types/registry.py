@@ -74,8 +74,6 @@ class ItemTypeRegistry(BaseItemTypeRegistry):
 
         output = []
 
-        output = []
-
         if format == 'names':
             for item_type in types:
                 output.append(item_type.name)

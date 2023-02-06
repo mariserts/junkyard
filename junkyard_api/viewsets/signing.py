@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
+from typing import Type
+
 from django.core.signing import BadSignature, SignatureExpired
 from django.db.models.query import QuerySet
 
-from rest_framework import serializers
+from rest_framework import permissions, serializers, viewsets
 from rest_framework.decorators import action
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -15,18 +17,17 @@ from ..signers.sign import sign_object
 from ..signers.unsign import unsign_object
 from ..serializers.signers import SigningSerializer, UnSigningSerializer
 
-from .base import BaseViewSet
-
 
 class SigningViewSet(
-    BaseViewSet
+    viewsets.GenericViewSet
 ):
 
+    permission_classes = (permissions.IsAuthenticated, )
     queryset = QuerySet()
     serializer_class = SigningSerializer
 
     def get_serializer_class(
-        self: BaseViewSet
+        self: Type
     ) -> serializers.Serializer:
         if self.request.path.endswith('/sign/'):
             return self.serializer_class
@@ -39,7 +40,7 @@ class SigningViewSet(
         url_path='sign',
     )
     def sign(
-        self: BaseViewSet,
+        self: Type,
         request: Request,
     ) -> Response:
 
@@ -63,7 +64,10 @@ class SigningViewSet(
                 'max_age': ['"max_age" must be of type int or None']
             })
 
-        return Response({'signature': data['signature']}, status=201)
+        return Response(
+            {'signature': data['signature']},
+            status=201
+        )
 
     @action(
         detail=False,
@@ -72,7 +76,7 @@ class SigningViewSet(
         url_path='unsign',
     )
     def unsign(
-        self: BaseViewSet,
+        self: Type,
         request: Request,
     ) -> Response:
 
@@ -99,9 +103,18 @@ class SigningViewSet(
             })
 
         except SignatureExpired:
-            return Response({'message': 'Signature expired'}, status=400)
+            return Response(
+                {'message': 'Signature expired'},
+                status=400
+            )
 
         except BadSignature:
-            return Response({'message': 'Bad signature'}, status=400)
+            return Response(
+                {'message': 'Bad signature'},
+                status=400
+            )
 
-        return Response({'data': data['data']}, status=201)
+        return Response(
+            {'data': data['data']},
+            status=201
+        )

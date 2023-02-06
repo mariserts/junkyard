@@ -1,0 +1,13 @@
+body { font-family: 'Lato', sans-serif; font-size: 18px; }
+
+.alert,
+.btn,
+.form-control,
+.navbar,
+.navbar-nav > li > .dropdown-menu {
+    border-radius: 0px;
+}
+
+@media (min-width: 992px) {
+    .container { width: 800px; }
+}

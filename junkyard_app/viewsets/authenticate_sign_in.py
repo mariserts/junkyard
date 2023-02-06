@@ -124,13 +124,13 @@ class SignInViewSet(
             )
             return error_response
 
-        redirect_to = settings.URLNAME_CMS_HOME
+        redirect_to = settings.URLNAME_CMS_HOMEPAGE
         if next not in [None, '']:
             redirect_to = next
 
         response = redirect(redirect_to)
 
-        self.set_response_session_cookie(
+        self.set_session_cookie(
             response,
             {
                 'access_token': data['access_token'],

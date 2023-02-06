@@ -2,7 +2,7 @@
 from typing import List, Type, Union
 
 from django.core.cache import cache
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, AnonymousUser
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q
@@ -32,6 +32,8 @@ class Application(AbstractApplication):
 
 class User(AbstractUser):
 
+    CACHE_TIMEOUT_GET_TENANTS = 30
+
     email = models.EmailField(unique=True)
 
     USERNAME_FIELD = 'email'
@@ -50,31 +52,52 @@ class User(AbstractUser):
         format: str = 'queryset'
     ):
 
-        if type(user) != User:
+        user_type = type(user)
+
+        if user_type == AnonymousUser:
+            return [-1, ]
+
+        if user_type != User:
             user = User.objects.filter(pk=user).first()
             if user is None:
-                return []
+                return ['-1', ]
 
-        owner_qs = Tenant.objects.filter(owner=user, is_active=True)
-        admin_qs = Tenant.objects.filter(
+        cache_key = f'models.User__get_tenants__{user.id}__{format}'
+        cached_data = cache.get(cache_key)
+        if cached_data is not None:
+            return cached_data
+
+        owner_queryset = Tenant.objects.filter(
+            owner=user,
+            is_active=True
+        )
+
+        admin_queryset = Tenant.objects.filter(
             admins__user=user,
             is_active=True,
         ).prefetch_related(
             'admins'
         )
 
-        qs = owner_qs | admin_qs
+        queryset = owner_queryset.union(admin_queryset, all=False)
 
         if settings.CASCADE_TENANT_PERMISSIONS is True:
-            # Find all child tenants for qs tenants
-            for tenant in qs:
-                qs = qs | Tenant.get_all_children(tenant)
+            for tenant in queryset:
+                queryset = queryset.union(
+                    Tenant.get_all_children(tenant),
+                    all=False
+                )
 
         if format == 'ids':
-            ids = list(qs.values_list('id', flat=True))
-            return list(set(ids))
 
-        return qs
+            ids = list(queryset.values_list('id', flat=True))
+            data = list(set(ids))
+
+            cache.set(cache_key, data, User.CACHE_TIMEOUT_GET_TENANTS)
+
+            return data
+
+        return queryset
 
 
 class Tenant(models.Model):

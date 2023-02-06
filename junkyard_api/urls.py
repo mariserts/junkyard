@@ -10,18 +10,13 @@ from drf_yasg import openapi
 
 from .conf import settings
 
+from .viewsets.admins import AdminsViewSet
 from .viewsets.authenticate import AuthenticationViewSet
 from .viewsets.item_types import ItemTypesViewSet
+from .viewsets.item_relations import ItemRelationsViewSet
 from .viewsets.items import ItemsViewSet
 from .viewsets.languages import LanguagesViewSet
-from .viewsets.public_items import PublicItemsViewSet
 from .viewsets.signing import SigningViewSet
-from .viewsets.tenant_admins import TenantAdminsViewSet
-from .viewsets.tenant_items_item_relations import (
-    TenantItemItemRelationsViewSet
-)
-from .viewsets.tenant_item_types import TenantItemTypesViewSet
-from .viewsets.tenant_items import TenantItemsViewSet
 from .viewsets.tenants import TenantsViewSet
 from .viewsets.users import UsersViewSet
 
@@ -44,7 +39,13 @@ schema_view = get_schema_view(
 #
 router = routers.SimpleRouter()
 
+
 # Base urls
+router.register(
+    r'admins',
+    AdminsViewSet,
+    basename='admins'
+)
 router.register(
     settings.PATH_AUTHENTICATE,
     AuthenticationViewSet,
@@ -66,11 +67,6 @@ router.register(
     basename='languages'
 )
 router.register(
-    r'public-items',
-    PublicItemsViewSet,
-    basename='public-items'
-)
-router.register(
     r'signer',
     SigningViewSet,
     basename='signer'
@@ -88,37 +84,14 @@ router.register(
 
 
 # tenant router
-tenant_router = routers.NestedSimpleRouter(router, r'tenants', lookup='tenant')
-
-# tenant nested urls
-tenant_router.register(
-    r'admins',
-    TenantAdminsViewSet,
-    basename='admins'
-)
-tenant_router.register(
-    r'item-types',
-    TenantItemTypesViewSet,
-    basename='item_types'
-)
-tenant_router.register(
-    r'items',
-    TenantItemsViewSet,
-    basename='items'
-)
-
-
-# Items router
 items_router = routers.NestedSimpleRouter(
-    tenant_router,
+    router,
     r'items',
     lookup='item'
 )
-
-# Items nested urls
 items_router.register(
     r'relations',
-    TenantItemItemRelationsViewSet,
+    ItemRelationsViewSet,
     basename='relations'
 )
 
@@ -150,10 +123,6 @@ urlpatterns = [
     path(
         'api/',
         include(router.urls)
-    ),
-    path(
-        'api/',
-        include(tenant_router.urls)
     ),
     path(
         'api/',

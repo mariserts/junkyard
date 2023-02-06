@@ -4,16 +4,6 @@ from rest_framework import permissions
 from .models import Tenant
 
 
-class AuthenticatedOrUnAuthenticatedCreate(permissions.BasePermission):
-
-    def has_permission(self, request, view):
-
-        if request.method == 'POST':
-            return True
-
-        return request.user.is_authenticated is True
-
-
 class ReadOnlyPermission(permissions.BasePermission):
 
     def has_permission(self, request, view):

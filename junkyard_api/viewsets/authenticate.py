@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from typing import Type
+
 import requests
 
 from django.contrib.auth import authenticate
@@ -37,7 +39,9 @@ from ..signers.unsign import unsign_object
 from oauth2_provider.contrib.rest_framework import OAuth2Authentication
 
 
-class AuthenticationViewSet(viewsets.GenericViewSet):
+class AuthenticationViewSet(
+    viewsets.GenericViewSet
+):
 
     PATH_GET_PASSWORD_RESET_LINK = 'get-password-reset-link'
     PATH_REGISTER = 'register'
@@ -50,7 +54,7 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
     queryset = QuerySet()
 
     def get_serializer_class(
-        self: viewsets.GenericViewSet,
+        self: Type,
     ) -> serializers.Serializer:
 
         if self.action in ['register', 'sign_in']:
@@ -78,7 +82,7 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
     )
     @permission_classes([permissions.AllowAny, ])
     def register(
-        self: viewsets.GenericViewSet,
+        self: Type,
         request: Request
     ) -> Response:
 
@@ -156,7 +160,7 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
     )
     @permission_classes([permissions.AllowAny, ])
     def sign_in(
-        self: viewsets.GenericViewSet,
+        self: Type,
         request: Request
     ) -> Response:
 
@@ -174,6 +178,12 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
         if user is None:
             return Response(
                 'Invalid credentials',
+                status=400
+            )
+
+        if user.is_active is False:
+            return Response(
+                'User is not active',
                 status=404
             )
 
@@ -217,7 +227,7 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
     )
     @permission_classes((permissions.IsAuthenticated))
     def sign_out(
-        self: viewsets.GenericViewSet,
+        self: Type,
         request: Request
     ) -> Response:
 
@@ -271,7 +281,7 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
     )
     @permission_classes([permissions.IsAuthenticated, ])
     def set_password(
-        self: viewsets.GenericViewSet,
+        self: Type,
         request: Request
     ) -> Response:
 
@@ -304,7 +314,7 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
     )
     @permission_classes([permissions.AllowAny, ])
     def set_password_with_token(
-        self: viewsets.GenericViewSet,
+        self: Type,
         request: Request
     ) -> Response:
 
@@ -401,7 +411,7 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
     )
     @permission_classes([permissions.AllowAny, ])
     def get_password_reset_link(
-        self: viewsets.GenericViewSet,
+        self: Type,
         request: Request
     ) -> Response:
 
@@ -454,7 +464,7 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
         )
 
     def send_link(
-        self: viewsets.GenericViewSet,
+        self: Type,
         email: str,
         link: str,
     ) -> None:
@@ -476,7 +486,9 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
         )
         msg.send()
 
-    def get_full_request_hostname(self):
+    def get_full_request_hostname(
+        self: Type,
+    ):
         hostname = 'http'
         if self.request.is_secure is True:
             hostname += 's'
@@ -485,7 +497,7 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
         return hostname
 
     def get_user_for_token(
-        self: viewsets.GenericViewSet,
+        self: Type,
         token: str,
     ) -> User:
 
@@ -504,7 +516,7 @@ class AuthenticationViewSet(viewsets.GenericViewSet):
         return access_token.user
 
     def get_user_for_email_and_password(
-        self: viewsets.GenericViewSet,
+        self: Type,
         email: str,
         password: str,
     ) -> User:

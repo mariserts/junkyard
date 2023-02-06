@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
-from typing import List, Union
+from typing import Type
 
 from rest_framework import serializers
-from rest_framework.reverse import reverse
 
 from ..conf import settings
 from ..models import Tenant
@@ -25,48 +24,10 @@ class TenantSerializer(serializers.ModelSerializer):
 
     translatable_content = TenantTranslatableContentSerializer(many=True)
 
-    def to_representation(
-        self: serializers.Serializer,
-        instance: Union[Tenant, List[Tenant]]
+    def validate_translatable_content(
+        self: Type,
+        data: dict
     ) -> dict:
-
-        many = True
-        if type(instance) != list:
-            many = False
-            instance = [instance, ]
-
-        output = []
-
-        for object in instance:
-
-            data = super(
-                serializers.ModelSerializer,
-                self
-            ).to_representation(
-                object
-            )
-
-            data['links'] = {
-                'admins': reverse(
-                    'admins-list',
-                    args=[object.id],
-                    request=self.context.get('request', None)
-                ),
-                'items': reverse(
-                    'items-list',
-                    args=[object.id],
-                    request=self.context.get('request', None)
-                )
-            }
-
-            output.append(data)
-
-        if many is True:
-            return output
-
-        return next(iter(output), None)
-
-    def validate_translatable_content(self, data):
 
         count = len(data)
 

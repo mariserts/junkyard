@@ -5,15 +5,15 @@ from django.db.models.query import QuerySet
 from django_filters import rest_framework as filters
 from rest_framework import mixins, permissions, viewsets
 
-from ..filtersets.users import UsersFilterSet
-from ..models import User
+from ..filtersets.admins import AdminsFilterSet
+from ..models import TenantAdmin, User
 from ..pagination import JunkyardApiPagination
-from ..serializers.users import UserSerializer
+from ..serializers.admins import AdminSerializer
 
 
-class UsersViewSet(
-    # mixins.CreateModelMixin,
-    # mixins.DestroyModelMixin,
+class AdminsViewSet(
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
     mixins.UpdateModelMixin,
@@ -21,28 +21,23 @@ class UsersViewSet(
 ):
 
     filter_backends = (filters.DjangoFilterBackend, )
-    filterset_class = UsersFilterSet
-    ordering_fields = ('email', )
+    filterset_class = AdminsFilterSet
+    ordering_fields = ('-id', )
     pagination_class = JunkyardApiPagination
     permission_classes = (permissions.IsAuthenticated, )
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
+    queryset = TenantAdmin.objects.all()
+    serializer_class = AdminSerializer
 
     def get_queryset(
         self: Type,
     ) -> QuerySet:
 
+        tenant_ids = User.get_tenants(self.request.user, format='ids')
+
         queryset = self.queryset.filter(
-            is_active=True
-        )
-
-        if self.request.method not in permissions.SAFE_METHODS:
-            queryset = queryset.filter(
-                id=self.request.user.id,
-            )
-
-        queryset = queryset.order_by(
+            tenant_id__in=tenant_ids
+        ).order_by(
             *self.ordering_fields
-        )
+        ).distinct()
 
         return queryset

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from django import template
-from django.urls import resolve, reverse
+from django.urls import reverse
 
 from ..conf import settings
 
@@ -14,34 +14,65 @@ def extend_field_css_classes(field, classes):
     return field
 
 
-@register.inclusion_tag('signer/components/footer.html', takes_context=True)
+@register.inclusion_tag(
+    'junkyard_app/components/footer.html',
+    takes_context=True
+)
 def footer(context):
     return {}
 
 
-@register.inclusion_tag('signer/components/menu.html', takes_context=True)
+@register.inclusion_tag(
+    'junkyard_app/components/menu.html',
+    takes_context=True
+)
 def mainmenu(context):
 
     request = context['request']
-    current_urlname = resolve(request.path_info).url_name
+    token_data = getattr(
+        request,
+        settings.REQUEST_TOKEN_ATTR_NAME,
+        {}
+    )
+    user = token_data.get('user', None)
+    is_authenticated = user is not None
 
-    return {
-        'links': [
+    links = [
+        {
+            'text': 'Home',
+            'url': reverse(settings.URLNAME_PUBLIC_HOMEPAGE),
+        }
+    ]
+
+    if is_authenticated is False:
+        links += [
             {
-                'active': current_urlname == settings.URLNAME_SIGN,
-                'text': 'Sign',
-                'url': reverse(settings.URLNAME_SIGN),
+                'text': 'Sign in',
+                'url': reverse(settings.URLNAME_SIGN_IN)
+            },
+        ]
+
+    else:
+        links += [
+            {
+                'text': 'CMS',
+                'url': reverse(settings.URLNAME_CMS_HOMEPAGE),
             },
             {
-                'active': current_urlname == settings.URLNAME_UNSIGN,
-                'text': 'Unsign',
-                'url': reverse(settings.URLNAME_UNSIGN),
-            }
-        ],
+                'text': user['email'],
+                'links': [{
+                    'text': 'Sign out',
+                    'url': reverse(settings.URLNAME_SIGN_OUT),
+                }],
+            },
+        ]
+
+    return {
+        'links': links,
         'request': request,
         'project': {
-            'title': settings.PROJECT_TITLE,
-            'url': '/'
+            'title': settings.TEXT_PROJECT_TITLE,
+            'url': reverse(settings.URLNAME_PUBLIC_HOMEPAGE),
         }
     }
 

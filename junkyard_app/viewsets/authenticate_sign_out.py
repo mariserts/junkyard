@@ -22,7 +22,7 @@ class SignOutViewSet(
 
         access_token = self.get_api_token()
 
-        error_response = redirect(settings.URLNAME_CMS_HOME)
+        error_response = redirect(settings.URLNAME_CMS_HOMEPAGE)
 
         try:
             AuthenticationClient().sign_out(access_token)
@@ -48,6 +48,6 @@ class SignOutViewSet(
 
         response = redirect(settings.URLNAME_SIGN_IN)
 
-        self.set_response_session_cookie(response, {}, -999999)
+        self.set_session_cookie(response, {}, -999999)
 
         return response

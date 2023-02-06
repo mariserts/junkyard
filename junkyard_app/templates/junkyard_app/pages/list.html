@@ -2,9 +2,6 @@
 
 {% block content %}
 
-    <a href="{% url 'sign_in'%}">Sign in</a>
-    <a href="{% url 'sign_out'%}">Sign out</a>
-
     {% if messages %}
         <div class="container">
             <div class="col-lg-4 col-lg-offset-4 col-md-4 col-md-offset-4 col-sm-6 col-sm-offset-3 col-xs-12">
@@ -15,22 +12,26 @@
         </div>
     {% endif %}
 
-    <h2>Tenants</h2>
-    {% for tenant in results.tenants.results %}
-        {{ tenant }}
-        <hr />
-    {% endfor %}
+    <div class="container">
 
-    <h2>Items</h2>
-    {% for item in results.items.results %}
-        {{ item }}
-        <hr />
-    {% endfor %}
+        <h2>Tenants</h2>
+        {% for tenant in results.tenants.results %}
+            {{ tenant }}
+            <hr />
+        {% endfor %}
 
-    <h2>Item types</h2>
-    {% for item_type in results.item_types.results %}
-        {{ item_type }}
-        <hr />
-    {% endfor %}
+        <h2>Items</h2>
+        {% for item in results.items.results %}
+            {{ item }}
+            <hr />
+        {% endfor %}
+
+        <h2>Item types</h2>
+        {% for item_type in results.item_types.results %}
+            {{ item_type }}
+            <hr />
+        {% endfor %}
+
+    </div>
 
 {% endblock %}
