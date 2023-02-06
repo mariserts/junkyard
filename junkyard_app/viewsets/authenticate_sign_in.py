@@ -14,7 +14,6 @@ from ..clients.exceptions import (
     HTTPError
 )
 from ..forms.sign_in import SignInForm
-from ..signing import sign
 
 from .base import UnAuthenticatedViewSet
 
@@ -131,16 +130,13 @@ class SignInViewSet(
 
         response = redirect(redirect_to)
 
-        response.set_cookie(
-            settings.COOKIE_NAME_SESSION_ID,
-            sign(
-                {
-                    'access_token': data['access_token'],
-                    'user': data['user'],
-                },
-                max_age=data['expires_in']
-            ),
-            max_age=data['expires_in']
+        self.set_response_session_cookie(
+            response,
+            {
+                'access_token': data['access_token'],
+                'user': data['user'],
+            },
+            data['expires_in']
         )
 
         return response

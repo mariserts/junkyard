@@ -79,23 +79,26 @@ class RegisterViewSet(
         context = self.get_context()
         form = context['form']['form']
 
-        error_response = render(
-            request,
-            self.template,
-            context=context,
-            status=400
-        )
-
         if form.is_valid() is False:
             messages.error(
                 request,
                 'Invalid form data'
             )
-            return error_response
+            return render(
+                request,
+                self.template,
+                context=context,
+                status=400
+            )
 
         email = form.cleaned_data['email']
         password = form.cleaned_data['password']
         repeat_password = form.cleaned_data['repeat_password']
+
+        error_url = reverse(settings.URLNAME_REGISTER)
+        error_url += f'?email={email}'
+
+        error_response = redirect(error_url)
 
         if password != repeat_password:
             messages.error(
@@ -130,10 +133,13 @@ class RegisterViewSet(
 
         response = redirect(settings.URLNAME_CMS_HOME)
 
-        response.set_cookie(
-            settings.COOKIE_NAME_SESSION_ID,
-            self.sign_token(data['access_token']),
-            max_age=data['expires_in']
+        self.set_response_session_cookie(
+            response,
+            {
+                'access_token': data['access_token'],
+                'user': data['user'],
+            },
+            data['expires_in']
         )
 
         return response
