@@ -48,10 +48,6 @@ class SignOutViewSet(
 
         response = redirect(settings.URLNAME_SIGN_IN)
 
-        response.set_cookie(
-            settings.COOKIE_NAME_SESSION_ID,
-            '',
-            max_age=-99999
-        )
+        self.set_response_session_cookie(response, {}, -999999)
 
         return response
