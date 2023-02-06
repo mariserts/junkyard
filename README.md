@@ -45,10 +45,10 @@ OAUTH2_PROVIDER_APPLICATION_MODEL='junkyard_api.Application'
 
 
 OAUTH2_PROVIDER = {
+    'OAUTH2_BACKEND_CLASS': 'oauth2_provider.oauth2_backends.JSONOAuthLibCore',
     'SCOPES': {
         'read': 'Read scope',
         'write': 'Write scope',
-        'groups': 'Access to your groups'
     }
 }
 

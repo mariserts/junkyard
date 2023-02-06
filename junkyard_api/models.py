@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from typing import List, Union
+from typing import List, Type, Union
 
 from django.core.cache import cache
 from django.contrib.auth.models import AbstractUser
@@ -40,18 +40,41 @@ class User(AbstractUser):
     objects = managers.CustomUserManager()
 
     def save(self, *args, **kwargs):
-
         self.email = self.email.lower()
         self.username = self.email
-
         super(User, self).save(*args, **kwargs)
 
-        Application.objects.create(
-            user=self,
-            name=self.email,
-            client_type=Application.CLIENT_PUBLIC,
-            authorization_grant_type=Application.GRANT_CLIENT_CREDENTIALS
+    @staticmethod
+    def get_tenants(
+        user: Union[str, int, Type],
+        format: str = 'queryset'
+    ):
+
+        if type(user) != User:
+            user = User.objects.filter(pk=user).first()
+            if user is None:
+                return []
+
+        owner_qs = Tenant.objects.filter(owner=user, is_active=True)
+        admin_qs = Tenant.objects.filter(
+            admins__user=user,
+            is_active=True,
+        ).prefetch_related(
+            'admins'
         )
+
+        qs = owner_qs | admin_qs
+
+        if settings.CASCADE_TENANT_PERMISSIONS is True:
+            # Find all child tenants for qs tenants
+            for tenant in qs:
+                qs = qs | Tenant.get_all_children(tenant)
+
+        if format == 'ids':
+            ids = list(qs.values_list('id', flat=True))
+            return list(set(ids))
+
+        return qs
 
 
 class Tenant(models.Model):

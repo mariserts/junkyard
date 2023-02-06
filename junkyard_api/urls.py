@@ -8,6 +8,11 @@ from rest_framework_nested import routers
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 
+from .conf import settings
+
+from .viewsets.authenticate import AuthenticationViewSet
+from .viewsets.item_types import ItemTypesViewSet
+from .viewsets.items import ItemsViewSet
 from .viewsets.languages import LanguagesViewSet
 from .viewsets.public_items import PublicItemsViewSet
 from .viewsets.signing import SigningViewSet
@@ -40,6 +45,21 @@ schema_view = get_schema_view(
 router = routers.SimpleRouter()
 
 # Base urls
+router.register(
+    settings.PATH_AUTHENTICATE,
+    AuthenticationViewSet,
+    basename=settings.BASENAME_AUTHENTICATE
+)
+router.register(
+    r'item-types',
+    ItemTypesViewSet,
+    basename='item-types'
+)
+router.register(
+    r'items',
+    ItemsViewSet,
+    basename='items'
+)
 router.register(
     r'languages',
     LanguagesViewSet,
@@ -104,6 +124,10 @@ items_router.register(
 
 
 urlpatterns = [
+    path(
+        'accounts/',
+        include('django.contrib.auth.urls')
+    ),
     path(
         'o/',
         include('oauth2_provider.urls', namespace='oauth2_provider')
