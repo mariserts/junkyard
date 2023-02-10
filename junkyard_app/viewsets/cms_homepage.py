@@ -3,9 +3,7 @@ from typing import Type
 from django.http.request import HttpRequest
 from django.shortcuts import HttpResponse, render
 
-from ..clients.item_types import ItemTypesClient
-from ..clients.items import ItemsClient
-from ..clients.tenants import TenantsClient
+from ..clients.projects import ProjectsClient
 
 from .base import AuthenticatedViewSet
 
@@ -24,22 +22,7 @@ class CmsHomePageViewSet(
 
         access_token = self.get_api_token()
 
-        item_types = ItemTypesClient().get_item_types(
-            access_token
-        )
-
-        items = ItemsClient().get_items(
-            access_token,
-            page=1,
-            count=10,
-        )
-
-        tenants = TenantsClient().get_tenants(
-            access_token,
-            user_id=1,
-            page=1,
-            count=1000000
-        )
+        projects = ProjectsClient().get_projects(access_token)
 
         context['page'] = {
             'title': 'CMS Overview',
@@ -47,9 +30,7 @@ class CmsHomePageViewSet(
         }
 
         context['results'] = {
-            'item_types': item_types,
-            'items': items,
-            'tenants': tenants,
+            'projects': projects
         }
 
         return context

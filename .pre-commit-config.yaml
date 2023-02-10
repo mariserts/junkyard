@@ -17,9 +17,9 @@ repos:
       - id: detect-private-key
       - id: end-of-file-fixer
       - id: fix-encoding-pragma
-        exclude: ^manage.py|migrations/|demo/
+        exclude: ^manage.py|migrations/|demo/|urls.py
       - id: flake8
-        exclude: ^manage.py|migrations/|demo/|models.py
+        exclude: ^manage.py|migrations/|demo/|urls.py
       - id: name-tests-test
         args:
           - --django

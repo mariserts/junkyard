@@ -4,6 +4,9 @@ import os
 from django.conf import settings as dj_settings
 
 
+TRUE = ['true', 'True', 1, '1', True]
+
+
 class Settings:
 
     @property
@@ -20,11 +23,7 @@ class Settings:
 
     @property
     def CASCADE_TENANT_PERMISSIONS(self):
-        return getattr(
-            dj_settings,
-            'JUNKYARD_API_CASCADE_TENANT_PERMISSIONS',
-            True
-        )
+        return os.getenv('CASCADE_TENANT_PERMISSIONS') in TRUE
 
     @property
     def ITEM_TYPE_REGISTRY(self):

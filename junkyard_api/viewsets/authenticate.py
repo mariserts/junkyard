@@ -206,7 +206,7 @@ class AuthenticationViewSet(
             response_data = request.json()
             response_data['user'] = {
                 'id': user.id,
-                'email': user.email
+                'email': user.email,
             }
 
             return Response(

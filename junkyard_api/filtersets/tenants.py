@@ -75,7 +75,11 @@ class TenantsFilterSet(FilterSet):
         value: int
     ) -> QuerySet:
 
-        queryset = queryset.filter(parent_id=int(value))
+        queryset = queryset.filter(
+            children__id=int(value)
+        ).prefetch_related(
+            'children'
+        )
 
         return queryset
 
@@ -87,9 +91,7 @@ class TenantsFilterSet(FilterSet):
     ) -> QuerySet:
 
         queryset = queryset.filter(
-            children__id=int(value)
-        ).prefetch_related(
-            'children'
+            parent_id=int(value)
         )
 
         return queryset
