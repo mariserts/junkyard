@@ -20,6 +20,7 @@ from .conf import settings
 
 from .viewsets.authenticate import AuthenticationViewSet
 from .viewsets.languages import LanguagesViewSet
+from .viewsets.projects_languages import ProjectsLanguagesViewSet
 from .viewsets.projects_item_types import ProjectsItemTypesViewSet
 from .viewsets.projects_items import ProjectsItemsViewSet
 from .viewsets.projects_tenants_items import ProjectsTenantsItemsViewSet
@@ -54,7 +55,7 @@ router = routers.SimpleRouter()
 # /api/
 router.register(settings.PATH_AUTHENTICATE, AuthenticationViewSet,basename=settings.BASENAME_AUTHENTICATE)
 router.register(r'projects', ProjectsViewSet, basename='projects')
-router.register(r'languages', LanguagesViewSet, basename='languages')
+# router.register(r'languages', LanguagesViewSet, basename='languages')
 router.register(r'cryptography', SigningViewSet, basename='cryptography')
 router.register(r'users', UsersViewSet, basename='users')
 
@@ -62,6 +63,7 @@ router.register(r'users', UsersViewSet, basename='users')
 projects_router = routers.NestedSimpleRouter(router, r'projects', lookup='project')
 projects_router.register(r'item-types', ProjectsItemTypesViewSet, basename='item-types')
 projects_router.register(r'items', ProjectsItemsViewSet, basename='items')
+projects_router.register(r'languages', ProjectsLanguagesViewSet, basename='languages')
 projects_router.register(r'tenants', ProjectsTenantsViewSet, basename='tenants')
 projects_router.register(r'users', ProjectsUsersViewSet, basename='users')
 

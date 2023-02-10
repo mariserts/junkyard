@@ -10,18 +10,18 @@ from ..models import Item
 
 class ProjectsItemsFilterSet(FilterSet):
 
+    class Meta:
+        model = Item
+        fields = [
+            'item_type',
+        ]
+
     CHOICES_I_CAN_UPDATE = ('update', 'Update')
     CHOICES_I_CAN = (
         CHOICES_I_CAN_UPDATE,
     )
 
     action = ChoiceFilter(method='filter_by_action', choices=CHOICES_I_CAN)
-
-    class Meta:
-        model = Item
-        fields = [
-            'item_type',
-        ]
 
     def get_project_pk(
         self: Type

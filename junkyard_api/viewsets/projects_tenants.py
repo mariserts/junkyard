@@ -3,16 +3,19 @@ from typing import Type
 
 from django.db.models.query import QuerySet
 
-from django_filters import rest_framework as filters
 from rest_framework import mixins, permissions, viewsets
 
-from ..filtersets.tenants import TenantsFilterSet
+from django_filters import rest_framework as filters
+
+from ..filtersets.projects_tenants import ProjectsTenantsFilterSet
 from ..models import Tenant
 from ..pagination import JunkyardApiPagination
 from ..serializers.tenants import TenantSerializer
 
 
-class ProjectsTenantsViewSetPermission(permissions.BasePermission):
+class ProjectsTenantsViewSetPermission(
+    permissions.BasePermission
+):
 
     def has_permission(
         self: Type,
@@ -20,10 +23,8 @@ class ProjectsTenantsViewSetPermission(permissions.BasePermission):
         view: Type
     ):
 
-        if request.method in permissions.SAFE_METHODS:
-
+        if request.method not in permissions.SAFE_METHODS:
             project_pk = view.kwargs['project_pk']
-
             return request.user.permission_set.is_project_user(project_pk)
 
         return True
@@ -39,8 +40,8 @@ class ProjectsTenantsViewSet(
 ):
 
     filter_backends = (filters.DjangoFilterBackend, )
-    filterset_class = TenantsFilterSet
-    ordering_fields = ('translatable_content__title', )
+    filterset_class = ProjectsTenantsFilterSet
+    ordering_fields = ('id', )
     pagination_class = JunkyardApiPagination
     permission_classes = (
         permissions.IsAuthenticated,
@@ -58,9 +59,11 @@ class ProjectsTenantsViewSet(
 
         project_pk = self.kwargs['project_pk']
 
-        queryset = self.request.user.get_project_tenants(project_pk)
-
-        queryset = queryset.order_by(
+        queryset = self.queryset.filter(
+            projects__project__pk=project_pk,
+        ).prefetch_related(
+            'projects__project',
+        ).order_by(
             *self.ordering_fields
         )
 

@@ -7,3 +7,4 @@ omit =
     manage.py
     */migrations/*
     */tests/*
+    junkyard_app/*
