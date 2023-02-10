@@ -90,18 +90,33 @@ class ItemRelationAdmin(admin.TabularInline):
 
 class ItemAdmin(admin.ModelAdmin):
     inlines = [ItemRelationAdmin, ]
-    raw_id_fields = ['tenant']
+    raw_id_fields = ['project', 'tenant']
+
+
+class ProjectAdmin(admin.ModelAdmin):
+    pass
+
+
+class ProjectTenantAdmin(admin.ModelAdmin):
+    raw_id_fields = ['project', 'tenant']
+
+
+class ProjectUserAdmin(admin.ModelAdmin):
+    raw_id_fields = ['project', 'user']
 
 
 class TenantAdmin(admin.ModelAdmin):
     raw_id_fields = ['parent']
 
 
-class TenantAdminAdmin(admin.ModelAdmin):
-    raw_id_fields = ['tenant', 'user']
+class ProjectTenantUserAdmin(admin.ModelAdmin):
+    raw_id_fields = ['project', 'tenant', 'user']
 
 
 admin.site.register(models.Item, ItemAdmin)
-admin.site.register(models.User, UserAdmin)
+admin.site.register(models.Project, ProjectAdmin)
+admin.site.register(models.ProjectTenant, ProjectTenantAdmin)
+admin.site.register(models.ProjectUser, ProjectUserAdmin)
 admin.site.register(models.Tenant, TenantAdmin)
-admin.site.register(models.TenantAdmin, TenantAdminAdmin)
+admin.site.register(models.ProjectTenantUser, ProjectTenantUserAdmin)
+admin.site.register(models.User, UserAdmin)

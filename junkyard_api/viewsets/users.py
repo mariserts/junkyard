@@ -1,7 +1,4 @@
 # -*- coding: utf-8 -*-
-from typing import Type
-
-from django.db.models.query import QuerySet
 from django_filters import rest_framework as filters
 from rest_framework import mixins, permissions, viewsets
 
@@ -12,8 +9,8 @@ from ..serializers.users import UserSerializer
 
 
 class UsersViewSet(
-    # mixins.CreateModelMixin,
-    # mixins.DestroyModelMixin,
+    mixins.CreateModelMixin,
+    mixins.DestroyModelMixin,
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
     mixins.UpdateModelMixin,
@@ -27,22 +24,3 @@ class UsersViewSet(
     permission_classes = (permissions.IsAuthenticated, )
     queryset = User.objects.all()
     serializer_class = UserSerializer
-
-    def get_queryset(
-        self: Type,
-    ) -> QuerySet:
-
-        queryset = self.queryset.filter(
-            is_active=True
-        )
-
-        if self.request.method not in permissions.SAFE_METHODS:
-            queryset = queryset.filter(
-                id=self.request.user.id,
-            )
-
-        queryset = queryset.order_by(
-            *self.ordering_fields
-        )
-
-        return queryset

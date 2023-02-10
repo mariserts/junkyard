@@ -3,10 +3,10 @@ from typing import Union
 
 from django.db.models.query import QuerySet
 
-from django_filters import FilterSet
+from django_filters import FilterSet, NumberFilter
 
 from ..conf import settings
-from ..models import Item
+from ..models import Item, User
 
 from .filters import EmptyMultipleChoiceFilter
 from .search_vectors import SearchVectorConditionGenerator
@@ -22,6 +22,20 @@ class ItemsFilterSet(FilterSet):
 
     item_type = EmptyMultipleChoiceFilter(method='filter_by_item_type')
     filter = EmptyMultipleChoiceFilter(method='filter_by_filter')
+    for_user = NumberFilter(method='filter_by_for_user')
+
+    def filter_by_for_user(
+        self,
+        queryset: QuerySet,
+        name: str,
+        value: Union[str, None]
+    ) -> QuerySet:
+
+        queryset = queryset.filter(
+            tenant_id__in=User.get_tenants(value, format='ids')
+        ).distinct()
+
+        return queryset
 
     def filter_by_filter(
         self,
@@ -29,9 +43,6 @@ class ItemsFilterSet(FilterSet):
         name: str,
         value: Union[str, None]
     ) -> QuerySet:
-
-        if len(value) == 0:
-            return queryset
 
         queryset = queryset.filter(
             SearchVectorConditionGenerator(value).get_conditions()

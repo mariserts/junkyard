@@ -129,6 +129,9 @@ class SearchVectorConditionGenerator(BaseConditionGenerator):
 
         filter_parts = string.split(':')
 
+        if len(filter_parts) != 2:
+            return None
+
         field = filter_parts[0]
         value = filter_parts[1]
 
@@ -171,6 +174,8 @@ class SearchVectorConditionGenerator(BaseConditionGenerator):
         conditions = Q()
 
         for string in self.filter_strings:
-            conditions.add(self.get_condition(string), Q.AND)
+            condition = self.get_condition(string)
+            if condition is not None:
+                conditions.add(condition, Q.AND)
 
         return conditions

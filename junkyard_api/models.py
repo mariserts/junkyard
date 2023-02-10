@@ -1,19 +1,20 @@
 # -*- coding: utf-8 -*-
+from datetime import datetime, timezone
 from typing import List, Type, Union
 
-from django.core.cache import cache
-from django.contrib.auth.models import AbstractUser, AnonymousUser
-from django.core.exceptions import ValidationError
+from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models import Q
 from django.db.models.query import QuerySet
 
+from networkx import DiGraph
+from networkx.exception import NetworkXError
+from networkx.algorithms.dag import descendants
+
 from oauth2_provider.models import AbstractApplication
 
-from . import managers
 from .conf import settings
-from .exceptions import ItemTypeNotFoundException, NoItemTypeAccessException
-from .item_types.registry_entry import RegistryEntry
+from .managers import CustomUserManager
 
 
 class Application(AbstractApplication):
@@ -23,478 +24,263 @@ class Application(AbstractApplication):
         blank=True,
     )
 
-    def save(self, *args, **kwargs):
+    def save(
+        self: Type[models.Model],
+        *args: List,
+        **kwargs: dict,
+    ) -> None:
+
         creation = self.id is None
         if creation is True:
             self.raw_client_secret = self.client_secret
+
         super().save(*args, **kwargs)
 
 
 class User(AbstractUser):
-
-    CACHE_TIMEOUT_GET_TENANTS = 30
 
     email = models.EmailField(unique=True)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
 
-    objects = managers.CustomUserManager()
+    objects = CustomUserManager()
 
-    def save(self, *args, **kwargs):
+    def save(
+        self: Type[models.Model],
+        *args: List,
+        **kwargs: dict,
+    ) -> None:
+
         self.email = self.email.lower()
         self.username = self.email
+
         super(User, self).save(*args, **kwargs)
 
-    @staticmethod
-    def get_tenants(
-        user: Union[str, int, Type],
-        format: str = 'queryset'
-    ):
+    @property
+    def permission_set(self):
+        if getattr(self, '_permissions_set', None) is None:
+            setattr(self, '_permissions_set', PermissionSet(self))
+        return self._permissions_set
 
-        user_type = type(user)
+    def get_projects(
+        self: Type,
+        format: str = 'queryset',
+    ) -> Union[QuerySet, List[int]]:
 
-        if user_type == AnonymousUser:
-            return [-1, ]
-
-        if user_type != User:
-            user = User.objects.filter(pk=user).first()
-            if user is None:
-                return ['-1', ]
-
-        cache_key = f'models.User__get_tenants__{user.id}__{format}'
-        cached_data = cache.get(cache_key)
-        if cached_data is not None:
-            return cached_data
-
-        owner_queryset = Tenant.objects.filter(
-            owner=user,
-            is_active=True
-        )
-
-        admin_queryset = Tenant.objects.filter(
-            admins__user=user,
-            is_active=True,
-        ).prefetch_related(
-            'admins'
-        )
-
-        queryset = owner_queryset.union(admin_queryset, all=False)
-
-        if settings.CASCADE_TENANT_PERMISSIONS is True:
-            for tenant in queryset:
-                queryset = queryset.union(
-                    Tenant.get_all_children(tenant),
-                    all=False
-                )
+        ids = self.permission_set.get_projects()
 
         if format == 'ids':
+            return ids
 
-            ids = list(queryset.values_list('id', flat=True))
-            data = list(set(ids))
+        return Project.objects.filter(id__in=ids)
 
-            cache.set(cache_key, data, User.CACHE_TIMEOUT_GET_TENANTS)
+    def get_project_tenants(
+        self: Type,
+        project_pk: int,
+        format: str = 'queryset',
+    ) -> Union[Type[QuerySet], List[int]]:
 
-            return data
+        ids = self.permission_set.get_project_tenants(project_pk)
+
+        if format == 'ids':
+            return ids
+
+        if -1 in ids:
+            return Tenant.objects.none()
+
+        queryset = Tenant.objects.filter(
+            projects__project__pk=project_pk,
+        ).prefetch_related(
+            'projects__project'
+        )
+
+        if ids != []:
+            queryset = queryset.filter(
+                id__in=ids
+            )
+
+        return queryset
+
+    def get_project_items(
+        self: Type,
+        project_pk: int,
+    ) -> QuerySet:
+
+        ids = self.permission_set.get_project_tenants(project_pk)
+
+        if -1 in ids:
+            return Item.objects.none()
+
+        is_project_user = self.permission_set.is_project_user(project_pk)
+        if is_project_user is True:
+            return Item.objects.filter(
+                project__pk=project_pk,
+            ).select_related(
+                'project'
+            )
+
+        condition = Q()
+
+        condition.add(
+            Q(
+                project__pk=project_pk,
+                tenant_id__in=ids,
+            ),
+            Q.OR
+        )
+
+        condition.add(
+            Q(
+                project__pk=project_pk,
+                published_at__lt=datetime.now(timezone.utc),
+                published=True
+            ),
+            Q.OR
+        )
+
+        queryset = Item.objects.filter(
+            condition
+        ).select_related(
+            'project',
+        ).distinct()
 
         return queryset
 
 
-class Tenant(models.Model):
+class Project(models.Model):
 
-    CACHE_TIMEOUT_GET_ALL_CHILDREN_IDS = 10
-    CACHE_TIMEOUT_GET_ALL_PARENTS_IDS = 10
-    CACHE_TIMEOUT_USER_HAS_ACCESS = 10
+    description = models.CharField(max_length=4096, blank=True, null=True)
+    name = models.CharField(max_length=255, blank=True, null=True)
 
-    owner = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='tenants',
-    )
-    parent = models.ForeignKey(
-        'Tenant',
-        on_delete=models.CASCADE,
-        related_name='children',
-        blank=True,
-        null=True
-    )
-
-    translatable_content = models.JSONField(
-        default=list
-    )
-
-    is_active = models.BooleanField(default=False)
+    is_public = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=True, db_index=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
 
-        default = f'ID: {self.id}'
-        translatable_content = self.translatable_content
+class ProjectUser(models.Model):
 
-        if len(translatable_content) > 0:
-            return translatable_content[0].get('title', default)
+    project = models.ForeignKey(
+        Project,
+        related_name='users',
+        on_delete=models.CASCADE
+    )
+    user = models.ForeignKey(
+        User,
+        related_name='projects',
+        on_delete=models.CASCADE
+    )
+    acl = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        db_index=True,
+    )
 
-        return default
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
-    #
-    # Item types
-    #
 
-    @staticmethod
-    def get_tenant_item_types(
-        pk: Union[str, int]
-    ) -> RegistryEntry:
-        return settings.ITEM_TYPE_REGISTRY.get_types(
-            root_tenant_only=Tenant.is_root_tenant(pk)
-        )
+class Tenant(models.Model):
 
-    @staticmethod
-    def get_tenant_item_type(
-        pk: Union[str, int],
-        item_type: str
-    ) -> RegistryEntry:
+    parent = models.ForeignKey(
+        'Tenant',
+        related_name='children',
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True
+    )
 
-        _item_type = settings.ITEM_TYPE_REGISTRY.find(item_type)
+    translatable_content = models.JSONField(default=list)
+    is_active = models.BooleanField(default=True, db_index=True)
 
-        is_root_tenant = Tenant.is_root_tenant(pk)
-
-        if _item_type.root_tenant_only is not is_root_tenant:
-            raise NoItemTypeAccessException(
-                f'Tenant "{pk}" can not access item type "{item_type}"'
-            )
-
-        return _item_type
-
-    #
-    #
-    #
-
-    def is_root(self):
-        return self.parent is None
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     @staticmethod
-    def is_root_tenant(
-        pk: Union[int, str]
-    ) -> bool:
-        # XXXX: Perf imrovements posible
-        # Could cache this for small amount of time
-        # Could update cache key on save()
-        return Tenant.objects.filter(pk=pk, parent=None).exists()
+    def get_graph():
 
-    @staticmethod
+        # XXXX Cache list(G.nodes)
+        # Can add this after Tenant.save()
+
+        G = DiGraph()
+
+        for tenant in Tenant.objects.all():
+
+            parent_node = tenant.parent_id
+            tenant_node = tenant.id
+
+            if parent_node is not None:
+                G.add_edge(parent_node, tenant_node)
+
+        return G
+
     def get_all_children(
-        instance: Union[int, str, models.Model]
+        self: Type,
+        format: str = 'queryset'
     ) -> QuerySet:
 
-        """
+        G = Tenant.get_graph()
 
-        Get all children for instance
+        try:
+            ids = list(descendants(G, self.id))
+        except NetworkXError:
 
-        Attrs:
-        - instance: Tenant - instance of tenant
-
-        Returns:
-        - QuerySet - list of children
-
-        """
-
-        # XXXX: Perf
-        # N+1 query problem
-
-        if type(instance) in [int, str]:
-            try:
-                instance = Tenant.objects.get(pk=instance)
-            except Tenant.DoesNotExist:
-                return Tenant.objects.none()
-
-        children = instance.children.all().only('id')
-
-        for child in children:
-            children = children.union(Tenant.get_all_children(child))
-
-        return children
-
-    @staticmethod
-    def get_all_children_ids(
-        instance: Union[int, str, models.Model],
-        use_cache: bool = True,
-    ) -> List[int]:
-
-        """
-
-        Get all children ids for instance
-
-        Cached for CACHE_TIMEOUT_GET_ALL_CHILDREN_IDS of time
-
-        Attrs:
-        - instance: Tenant - instance of tenant
-        - use_cache: bool - determine if cache results
-
-        Returns:
-        - List[int] - list of children ids
-
-        """
-
-        if use_cache is True:
-            id = instance
-            if type(instance) == Tenant:
-                id = instance.id
-
-            cache_key = f'models.Tenant.get_all_children_ids__{id}'
-            cached_data = cache.get(cache_key)
-            if cached_data is not None:
-                return cached_data
-
-        if type(instance) in [int, str]:
-            try:
-                instance = Tenant.objects.get(pk=instance)
-            except Tenant.DoesNotExist:
-                if use_cache is True:
-                    cache.set(
-                        cache_key,
-                        [],
-                        Tenant.CACHE_TIMEOUT_GET_ALL_CHILDREN_IDS
-                    )
+            if format == 'ids':
                 return []
 
-        queryset = Tenant.get_all_children(
-            instance
-        ).values_list(
-            'id',
-            flat=True
-        )
-
-        ids = list(set(list(queryset)))
-
-        if use_cache is True:
-            cache.set(
-                cache_key,
-                ids,
-                Tenant.CACHE_TIMEOUT_GET_ALL_CHILDREN_IDS
-            )
-
-        return ids
-
-    @staticmethod
-    def get_all_parents(
-        instance: Union[int, str, models.Model]
-    ) -> QuerySet:
-
-        """
-
-        Get all parents for instance
-
-        Attrs:
-        - instance: Tenant - instance of tenant
-
-        Returns:
-        - QuerySet - list of parents
-
-        """
-
-        # XXXX: Perf
-        # N+1 query problem
-
-        if type(instance) in [int, str]:
-            try:
-                instance = Tenant.objects.get(pk=instance)
-            except Tenant.DoesNotExist:
-                return Tenant.objects.none()
-
-        parent = instance.parent
-        if parent is None:
             return Tenant.objects.none()
 
-        queryset = Tenant.objects.filter(id=instance.parent_id)
+        if format == 'ids':
+            return ids
 
-        parents = queryset.union(Tenant.get_all_parents(instance.parent))
-
-        return parents
-
-    @staticmethod
-    def get_all_parents_ids(
-        instance: Union[int, str, models.Model],
-        use_cache: bool = True,
-    ) -> List[int]:
-
-        """
-
-        Get all parents ids for instance
-
-        Cached for CACHE_TIMEOUT_GET_ALL_PARENTS_IDS of time
-
-        Attrs:
-        - instance: Tenant - instance of tenant
-        - use_cache: bool - determine if cache results
-
-        Returns:
-        - List[int] - list of parent ids
-
-        """
-
-        if use_cache is True:
-            id = instance
-            if type(instance) == Tenant:
-                id = instance.id
-
-        cache_key = f'models.Tenant.get_all_parents_ids__{id}'
-        cached_data = cache.get(cache_key)
-        if cached_data is not None:
-            return cached_data
-
-        if type(instance) in [int, str]:
-            try:
-                instance = Tenant.objects.get(pk=instance)
-            except Tenant.DoesNotExist:
-                if use_cache is True:
-                    cache.set(
-                        cache_key,
-                        [],
-                        Tenant.CACHE_TIMEOUT_GET_ALL_PARENTS_IDS
-                    )
-                return []
-
-        queryset = Tenant.get_all_parents(
-            instance
-        ).values_list(
-            'id',
-            flat=True
-        )
-
-        ids = list(set(list(queryset)))
-
-        if use_cache is True:
-            cache.set(
-                cache_key,
-                ids,
-                Tenant.CACHE_TIMEOUT_GET_ALL_PARENTS_IDS
-            )
-
-        return ids
-
-    #
-    # User access
-    #
-
-    @staticmethod
-    def user_has_access(
-        tenant_id: int,
-        user_id: int,
-    ) -> bool:
-
-        """
-
-        Get permission for user for tenant, if permission is cascading
-        then allow nested tenant permission
-
-        Cached for CACHE_TIMEOUT_USER_HAS_ACCESS of time
-
-        Attrs:
-        - tenant_id int: tenant id
-        - user_id int: user id
-
-        Returns
-        - bool
-
-        """
-
-        cascade = settings.CASCADE_TENANT_PERMISSIONS
-
-        cache_key = f'models.Tenant.user_has_access__{tenant_id}__{user_id}'
-        cached_data = cache.get(cache_key)
-        if cached_data is not None:
-            return cached_data
-
-        # Check if user is admin of current tenant
-
-        queryset = Tenant.objects.filter(
-            id=tenant_id,
-            is_active=True,
-        )
-
-        condition = Q()
-        condition.add(Q(owner_id=user_id), Q.OR)
-        condition.add(Q(admins__user_id=user_id), Q.OR)
-
-        queryset = queryset.filter(
-            condition
-        ).prefetch_related(
-            'admins'
-        ).exists()
-
-        if queryset is True:
-            cache.set(
-                cache_key,
-                queryset,
-                Tenant.CACHE_TIMEOUT_USER_HAS_ACCESS
-            )
-            return queryset
-
-        # if not and cascade is False return False
-
-        if queryset is False and cascade is False:
-            cache.set(
-                cache_key,
-                queryset,
-                Tenant.CACHE_TIMEOUT_USER_HAS_ACCESS
-            )
-            return queryset
+        return Tenant.objects.filter(id__in=ids)
 
 
-        tenant = Tenant.objects.filter(id=tenant_id).first()
-        if tenant is None:
-            cache.set(
-                cache_key,
-                False,
-                Tenant.CACHE_TIMEOUT_USER_HAS_ACCESS
-            )
-            return False
+class ProjectTenant(models.Model):
 
-        # if cascade is true check if user is admin of one of parent tenants
+    project = models.ForeignKey(
+        Project,
+        related_name='tenants',
+        on_delete=models.CASCADE
+    )
+    tenant = models.ForeignKey(
+        Tenant,
+        related_name='projects',
+        on_delete=models.CASCADE
+    )
 
-        parent_ids = Tenant.get_all_parents_ids(tenant)
+    is_active = models.BooleanField(default=True, db_index=True)
 
-        queryset = Tenant.objects.filter(
-            id__in=parent_ids
-        )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
-        condition = Q()
-        condition.add(Q(owner_id=user_id), Q.OR)
-        condition.add(Q(admins__user_id=user_id), Q.OR)
 
-        queryset = queryset.filter(
-            condition
-        ).prefetch_related(
-            'admins'
-        ).exists()
-
-        cache.set(
-            cache_key,
-            queryset,
-            Tenant.CACHE_TIMEOUT_USER_HAS_ACCESS
-        )
-
-        return queryset
-
-class TenantAdmin(models.Model):
+class ProjectTenantUser(models.Model):
 
     class Meta:
         unique_together = (
+            'project',
             'tenant',
             'user'
         )
 
+    project = models.ForeignKey(
+        Project,
+        related_name='tenant_users',
+        on_delete=models.CASCADE
+    )
     tenant = models.ForeignKey(
         Tenant,
         on_delete=models.CASCADE,
-        related_name='admins',
+        related_name='users',
     )
     user = models.ForeignKey(
         User,
+        related_name='tenants',
         on_delete=models.CASCADE,
-        related_name='tenants_to_admin',
     )
     acl = models.CharField(
         max_length=255,
@@ -502,16 +288,23 @@ class TenantAdmin(models.Model):
         null=True,
     )
 
-    def __str__(self):
-        return f'User: {self.user} Tenant: {self.tenant}'
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
 
 class Item(models.Model):
 
+    project = models.ForeignKey(
+        Project,
+        related_name='items',
+        on_delete=models.CASCADE,
+    )
     tenant = models.ForeignKey(
         Tenant,
-        on_delete=models.CASCADE,
         related_name='items',
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
     )
 
     item_type = models.CharField(
@@ -535,15 +328,10 @@ class Item(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-
-        default = f'ID: {self.id} | {self.item_type}'
-        translatable_content = self.translatable_content
-
-        if len(translatable_content) > 0:
-            return translatable_content[0].get('title', default)
-
-        return default
+    def __str__(
+        self: Type,
+    ) -> str:
+        return f'ID: {self.id} | {self.item_type}'
 
 
 class ItemRelation(models.Model):
@@ -569,6 +357,9 @@ class ItemRelation(models.Model):
         null=True
     )
 
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
 
 class SearchVector(models.Model):
 
@@ -582,3 +373,240 @@ class SearchVector(models.Model):
     language = models.CharField(max_length=255, blank=True, null=True)
     raw_value = models.CharField(max_length=4096, blank=True, null=True)
     vector = models.CharField(max_length=4096)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+class PermissionSet:
+
+    pset = None
+    user = None
+
+    def __init__(
+        self: Type,
+        user: Type[User],
+    ) -> None:
+
+        self.user = user
+        self.pset = self.get_permissions_set()
+
+    #
+    #
+    #
+
+    def get_projects(
+        self: Type
+    ) -> List[int]:
+        return list(map(lambda key: int(key), self.pset['projects'].keys()))
+
+    def get_project_tenants(
+        self: Type,
+        project_pk: Union[int, str],
+    ) -> List[int]:
+
+        if self.is_project_user(project_pk) is True:
+            return []
+
+        tenants = self.pset['projects'].get(
+            str(project_pk),
+            {}
+        ).get(
+            'tenants',
+            None
+        )
+
+        if tenants is None:
+            return [-1, ]
+
+        return list(map(lambda key: int(key), tenants.keys()))
+
+    #
+    #
+    #
+
+    def is_project_user(
+        self: Type,
+        project_pk: Union[int, str],
+    ) -> bool:
+        return self.pset['projects'].get(
+            str(project_pk),
+            {}
+        ).get(
+            'is_user',
+            False
+        )
+
+    def is_project_tenant_user(
+        self: Type,
+        project_pk: Union[int, str],
+        tenant_pk: Union[int, str],
+    ) -> bool:
+
+        if self.is_project_user() is True:
+            return True
+
+        return self.pset['projects'].get(
+            str(project_pk),
+            {}
+        ).get('tenants', {}).get(
+            str(tenant_pk),
+            {}
+        ).get(
+            'is_user',
+            False
+        )
+
+        return False
+
+    #
+    #
+    #
+
+    def get_permissions_set(
+        self: Type
+    ) -> dict:
+
+        data = {
+            'projects': {}
+        }
+
+        if isinstance(self.user, User) is False:
+            return data
+
+        # Get all Projects where user is ProjectUser
+
+        pu_objects = ProjectUser.objects.filter(
+            user=self.user,
+            user__is_active=True,
+            project__is_active=True,
+        ).select_related(
+            'project',
+            # 'user',
+        ).only(
+            'id',
+            'acl',
+            'project_id',
+        )
+
+        for object in pu_objects:
+            data['projects'][str(object.project_id)] = {
+                'acl': object.acl,
+                'id': object.project_id,
+                'is_user': True,
+                'tenants': {}
+            }
+
+        # Get all Projects where user is TenantUser
+
+        project_ids_to_exclude = list(
+            pu_objects.values_list('project_id', flat=True)
+        )
+
+        ptu_objects = ProjectTenantUser.objects.filter(
+            user=self.user,
+            project__is_active=True,
+            tenant__is_active=True,
+            tenant__projects__is_active=True,
+        ).select_related(
+            'project',
+            'tenant',
+        ).prefetch_related(
+            'tenant__projects',
+        ).exclude(
+            project_id__in=project_ids_to_exclude
+        ).only(
+            'id',
+            'acl',
+            'project_id',
+            'tenant_id',
+        )
+
+        tenant_ids_to_exclude = []
+
+        for object in ptu_objects:
+
+            tenant_ids_to_exclude.append(object.tenant_id)
+
+            project_pk = str(object.project_id)
+            tenant_pk = str(object.tenant_id)
+
+            if project_pk not in data['projects']:
+                data['projects'][project_pk] = {
+                    'acl': None,
+                    'id': object.project_id,
+                    'is_user': False,
+                    'tenants': {}
+                }
+
+            data['projects'][project_pk]['tenants'][tenant_pk] = {
+                'acl': object.acl,
+                'id': object.tenant.id,
+                'is_user': True,
+            }
+
+        # Get all nested tenants in permissions cascade
+
+        if settings.CASCADE_TENANT_PERMISSIONS is True:
+
+            G = Tenant.get_graph()
+
+            projects_to_iter = list(
+                map(
+                    lambda project_pk:
+                        int(project_pk),
+                    data['projects'].keys()
+                )
+            )
+
+            projects_to_iter = list(
+                set(projects_to_iter).difference(set(project_ids_to_exclude))
+            )
+
+            for project_id in projects_to_iter:
+
+                tenants = data['projects'][str(project_id)].get('tenants', {})
+
+                ids = sum(
+                    list(
+                        map(
+                            lambda id:
+                                list(descendants(G, int(id))),
+                            tenants.keys()
+                        )
+                    ),
+                    []
+                )
+
+                nested_tenant_objects = ProjectTenant.objects.filter(
+                    is_active=True,
+                    project_id=project_id,
+                    project__is_active=True,
+                    tenant__pk__in=ids,
+                    tenant__is_active=True,
+                ).exclude(
+                    project_id__in=project_ids_to_exclude,
+                ).exclude(
+                    tenant_id__in=tenant_ids_to_exclude,
+                ).select_related(
+                    'project',
+                    'tenant',
+                ).only(
+                    'tenant_id',
+                    'project',
+                )
+
+                for object in nested_tenant_objects:
+
+                    tenant_pk = str(object.tenant_id)
+
+                    data['projects'][project_id]['tenants'][tenant_pk] = {
+                        'acl': 'cascading-permission',
+                        'id': object.tenant_id,
+                        'is_user': True
+                    }
+
+        return data
+
+    def dict(self):
+        return self.pset

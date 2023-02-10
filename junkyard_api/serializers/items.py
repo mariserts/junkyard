@@ -22,9 +22,9 @@ class ItemSerializer(
     id = serializers.IntegerField(required=False)
     item_type = serializers.ChoiceField(choices=())
     metadata = serializers.JSONField(default=dict, required=False)
-    translatable_content = serializers.JSONField(default=[], required=False)
+    translatable_content = serializers.JSONField(default=list, required=False)
     published = serializers.BooleanField(default=False)
-    published_at = serializers.DateTimeField(required=False)
+    published_at = serializers.DateTimeField(required=False, allow_null=True)
     parent_items = NestedItemRelationSerializer(many=True, required=False)
 
     class Meta:

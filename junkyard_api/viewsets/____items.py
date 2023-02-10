@@ -1,32 +1,30 @@
 # -*- coding: utf-8 -*-
+from datetime import datetime, timezone
 from typing import Type
 
 from django.db.models.query import QuerySet
 from django_filters import rest_framework as filters
 from rest_framework import mixins, permissions, viewsets
 
-from ..filtersets.tenants import TenantsFilterSet
-from ..models import Tenant, User
+from ..filtersets.items import ItemsFilterSet
+from ..models import Item, User
 from ..pagination import JunkyardApiPagination
-from ..serializers.tenants import TenantSerializer
+from ..serializers.items import ItemSerializer
 
 
-class TenantsViewSet(
-    # mixins.CreateModelMixin,
-    # mixins.DestroyModelMixin,
+class ItemsViewSet(
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
-    # mixins.UpdateModelMixin,
     viewsets.GenericViewSet
 ):
 
     filter_backends = (filters.DjangoFilterBackend, )
-    filterset_class = TenantsFilterSet
-    ordering_fields = ('id', )
+    filterset_class = ItemsFilterSet
+    ordering_fields = ('-created_at', )
     pagination_class = JunkyardApiPagination
     permission_classes = (permissions.IsAuthenticatedOrReadOnly, )
-    queryset = Tenant.objects.all()
-    serializer_class = TenantSerializer
+    queryset = Item.objects.all()
+    serializer_class = ItemSerializer
 
     def get_authenticated_queryset(
         self: Type,
@@ -35,8 +33,10 @@ class TenantsViewSet(
         tenant_ids = User.get_tenants(self.request.user, format='ids')
 
         queryset = self.queryset.filter(
-            id__in=tenant_ids,
-            is_active=True
+            tenant__id__in=tenant_ids,
+            tenant__is_active=True,
+        ).select_related(
+            'tenant'
         ).order_by(
             *self.ordering_fields
         ).distinct()
@@ -48,9 +48,13 @@ class TenantsViewSet(
     ) -> QuerySet:
 
         queryset = self.queryset.filter(
-            is_active=True
+            published=True,
+            published_at__lt=datetime.now(timezone.utc),
+            tenant__is_active=True,
+        ).select_related(
+            'tenant'
         ).order_by(
-            *self.ordering_fields
+            '-published_at'
         ).distinct()
 
         return queryset
