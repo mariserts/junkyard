@@ -73,3 +73,49 @@ class AuthenticateViewSetTestCase(
             'user',
             request.json()
         )
+
+    def test_sign_out(
+        self: Type
+    ):
+
+        self.mock_post.return_value.status_code = 201
+        self.mock_post.return_value.ok = True
+        self.mock_post.return_value.json.return_value = {}
+
+        self.authenticate_with_token(self.access_token_three)
+
+        request = self.client.post(
+            '/api/authenticate/sign-out/',
+            {
+                'token': self.access_token_three.token,
+            },
+            format='json'
+        )
+
+        self.assertEquals(
+            request.status_code,
+            201
+        )
+
+    def test_set_password(
+        self: Type
+    ):
+
+        self.mock_post.return_value.status_code = 201
+        self.mock_post.return_value.ok = True
+        self.mock_post.return_value.json.return_value = {}
+
+        self.authenticate_with_token(self.access_token_three)
+
+        request = self.client.post(
+            '/api/authenticate/set-password/',
+            {
+                'password': 'abcd1234!',
+            },
+            format='json'
+        )
+
+        self.assertEquals(
+            request.status_code,
+            200
+        )

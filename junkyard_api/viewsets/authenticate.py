@@ -60,10 +60,10 @@ class AuthenticationViewSet(
         if self.action in ['register', 'sign_in']:
             return EmailPasswordSerializer
 
-        if self.action in ['sign_out', ]:
+        if self.action == 'sign_out':
             return TokenSerializer
 
-        if self.action in 'set_password':
+        if self.action == 'set_password':
             return PasswordSerializer
 
         if self.action == 'set_password_with_token':
@@ -86,7 +86,7 @@ class AuthenticationViewSet(
         request: Request
     ) -> Response:
 
-        serializer = EmailPasswordSerializer(data=request.data)
+        serializer = self.get_serializer_class()(data=request.data)
         if serializer.is_valid() is False:
             return Response(
                 serializer.errors,
@@ -164,7 +164,7 @@ class AuthenticationViewSet(
         request: Request
     ) -> Response:
 
-        serializer = EmailPasswordSerializer(data=request.data)
+        serializer = self.get_serializer_class()(data=request.data)
         if serializer.is_valid() is False:
             return Response(
                 serializer.errors,
@@ -231,12 +231,21 @@ class AuthenticationViewSet(
         request: Request
     ) -> Response:
 
-        try:
-            token = request.data['token']
-        except KeyError:
-            raise serializers.ValidationError({
-                'token': ['"token" is required']
-            })
+        serializer = self.get_serializer_class()(data=request.data)
+        if serializer.is_valid() is False:
+            return Response(
+                serializer.errors,
+                status=400
+            )
+
+        # try:
+        #     token = request.data['token']
+        # except KeyError:
+        #     raise serializers.ValidationError({
+        #         'token': ['"token" is required']
+        #     })
+
+        token = serializer.validated_data['token']
 
         try:
             user = self.get_user_for_token(token)
@@ -285,19 +294,26 @@ class AuthenticationViewSet(
         request: Request
     ) -> Response:
 
-        try:
-            password = request.data['password']
-        except KeyError:
-            raise serializers.ValidationError({
-                'password': ['"password" is required']
-            })
+        serializer = self.get_serializer_class()(data=request.data)
+        if serializer.is_valid() is False:
+            return Response(
+                serializer.errors,
+                status=400
+            )
+
+        # try:
+        #     password = request.data['password']
+        # except KeyError:
+        #     raise serializers.ValidationError({
+        #         'password': ['"password" is required']
+        #     })
+
+        password = serializer.validated_data['password']
 
         try:
             validate_password(password)
         except ValidationError as e:
-            raise serializers.ValidationError({
-                'password': [str(e)]
-            })
+            raise serializers.ValidationError({'password': str(e)})
 
         request.user.set_password(password)
 
@@ -318,26 +334,37 @@ class AuthenticationViewSet(
         request: Request
     ) -> Response:
 
-        try:
-            email = request.data['email']
-        except KeyError:
-            raise serializers.ValidationError({
-                'email': ['"email" is required']
-            })
+        serializer = self.get_serializer_class()(data=request.data)
+        if serializer.is_valid() is False:
+            return Response(
+                serializer.errors,
+                status=400
+            )
 
-        try:
-            token = request.data['token']
-        except KeyError:
-            raise serializers.ValidationError({
-                'token': ['"token" is required']
-            })
+        # try:
+        #     email = request.data['email']
+        # except KeyError:
+        #     raise serializers.ValidationError({
+        #         'email': ['"email" is required']
+        #     })
+        #
+        # try:
+        #     token = request.data['token']
+        # except KeyError:
+        #     raise serializers.ValidationError({
+        #         'token': ['"token" is required']
+        #     })
+        #
+        # try:
+        #     password = request.data['password']
+        # except KeyError:
+        #     raise serializers.ValidationError({
+        #         'password': ['"password" is required']
+        #     })
 
-        try:
-            password = request.data['password']
-        except KeyError:
-            raise serializers.ValidationError({
-                'password': ['"password" is required']
-            })
+        email = serializer.validated_data['email']
+        password = serializer.validated_data['password']
+        token = serializer.validated_data['token']
 
         try:
             validate_password(password)
@@ -415,12 +442,21 @@ class AuthenticationViewSet(
         request: Request
     ) -> Response:
 
-        try:
-            email = request.data['email']
-        except KeyError:
-            raise serializers.ValidationError({
-                'email': ['"email" is required']
-            })
+        serializer = self.get_serializer_class()(data=request.data)
+        if serializer.is_valid() is False:
+            return Response(
+                serializer.errors,
+                status=400
+            )
+
+        # try:
+        #     email = request.data['email']
+        # except KeyError:
+        #     raise serializers.ValidationError({
+        #         'email': ['"email" is required']
+        #     })
+
+        email = serializer.validated_data['email']
 
         try:
             user = User.objects.get(email=email, is_active=True)
