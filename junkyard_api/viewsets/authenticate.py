@@ -238,13 +238,6 @@ class AuthenticationViewSet(
                 status=400
             )
 
-        # try:
-        #     token = request.data['token']
-        # except KeyError:
-        #     raise serializers.ValidationError({
-        #         'token': ['"token" is required']
-        #     })
-
         token = serializer.validated_data['token']
 
         try:
@@ -301,13 +294,6 @@ class AuthenticationViewSet(
                 status=400
             )
 
-        # try:
-        #     password = request.data['password']
-        # except KeyError:
-        #     raise serializers.ValidationError({
-        #         'password': ['"password" is required']
-        #     })
-
         password = serializer.validated_data['password']
 
         try:
@@ -340,27 +326,6 @@ class AuthenticationViewSet(
                 serializer.errors,
                 status=400
             )
-
-        # try:
-        #     email = request.data['email']
-        # except KeyError:
-        #     raise serializers.ValidationError({
-        #         'email': ['"email" is required']
-        #     })
-        #
-        # try:
-        #     token = request.data['token']
-        # except KeyError:
-        #     raise serializers.ValidationError({
-        #         'token': ['"token" is required']
-        #     })
-        #
-        # try:
-        #     password = request.data['password']
-        # except KeyError:
-        #     raise serializers.ValidationError({
-        #         'password': ['"password" is required']
-        #     })
 
         email = serializer.validated_data['email']
         password = serializer.validated_data['password']
@@ -448,13 +413,6 @@ class AuthenticationViewSet(
                 serializer.errors,
                 status=400
             )
-
-        # try:
-        #     email = request.data['email']
-        # except KeyError:
-        #     raise serializers.ValidationError({
-        #         'email': ['"email" is required']
-        #     })
 
         email = serializer.validated_data['email']
 
