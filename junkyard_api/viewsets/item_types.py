@@ -8,29 +8,28 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from ..conf import settings
-from ..filtersets.languages import LanguagesFilterSet
-from ..serializers.languages import LanguageSerializer
+from ..filtersets.item_types import ItemTypesFilterSet
+from ..serializers.item_types import ItemTypeSerializer
 
 
-class LanguagesViewSet(
+class ItemTypesViewSet(
     viewsets.GenericViewSet
 ):
 
     filter_backends = (filters.DjangoFilterBackend, )
-    filterset_class = LanguagesFilterSet
+    filterset_class = ItemTypesFilterSet
     permission_classes = (permissions.IsAuthenticated, )
     queryset = QuerySet()
-    serializer_class = LanguageSerializer
+    serializer_class = ItemTypeSerializer
 
-    def get_languages(
+    def get_item_types(
         self: Type,
     ) -> List[dict]:
 
         languages = []
 
-        for code, name in settings.LANGUAGES_REGISTRY.languages.items():
+        for name, registry_entry in settings.ITEM_TYPE_REGISTRY.types.items():
             languages.append({
-                'code': code,
                 'name': name
             })
 
@@ -41,7 +40,7 @@ class LanguagesViewSet(
         request: Type[Request],
     ) -> Type[Response]:
 
-        languages = self.get_languages()
+        languages = self.get_item_types()
 
         data = {
             'next': None,

@@ -19,6 +19,7 @@ from .conf import settings
 # from .viewsets.users import UsersViewSet
 
 from .viewsets.authenticate import AuthenticationViewSet
+from .viewsets.item_types import ItemTypesViewSet
 from .viewsets.languages import LanguagesViewSet
 from .viewsets.projects_languages import ProjectsLanguagesViewSet
 from .viewsets.projects_item_types import ProjectsItemTypesViewSet
@@ -28,7 +29,7 @@ from .viewsets.projects_tenants_users import ProjectsTenantsUsersViewSet
 from .viewsets.projects_tenants import ProjectsTenantsViewSet
 from .viewsets.projects_users import ProjectsUsersViewSet
 from .viewsets.projects import ProjectsViewSet
-from .viewsets.signing import SigningViewSet
+from .viewsets.cryptography import CryptographyViewSet
 from .viewsets.users import UsersViewSet
 
 
@@ -54,9 +55,10 @@ router = routers.SimpleRouter()
 # Base urls
 # /api/
 router.register(settings.PATH_AUTHENTICATE, AuthenticationViewSet,basename=settings.BASENAME_AUTHENTICATE)
+router.register(r'cryptography', CryptographyViewSet, basename='cryptography')
+router.register(r'item-types', ItemTypesViewSet, basename='item-types')
+router.register(r'languages', LanguagesViewSet, basename='languages')
 router.register(r'projects', ProjectsViewSet, basename='projects')
-# router.register(r'languages', LanguagesViewSet, basename='languages')
-router.register(r'cryptography', SigningViewSet, basename='cryptography')
 router.register(r'users', UsersViewSet, basename='users')
 
 # /api/projects/

@@ -2,9 +2,7 @@
 from datetime import datetime, timedelta, timezone
 from typing import Type
 
-from django.test import TestCase
-
-from rest_framework.test import APIClient
+from rest_framework.test import APITestCase
 
 from oauth2_provider.models import AccessToken
 
@@ -12,12 +10,12 @@ from ..models import Application, Tenant, Project, User
 
 
 class BaseTestCase(
-    TestCase
+    APITestCase
 ):
 
-    def setUp(self):
-
-        self.client = APIClient()
+    def setUp(
+        self: Type
+    ):
 
         self.application = Application.objects.create(
             authorization_grant_type=Application.GRANT_PASSWORD,
@@ -25,8 +23,11 @@ class BaseTestCase(
         )
 
         #
+        self.user_one_email = 'user_one@test.case'
+        self.user_one_password = 'user_one@pa55w0rd'
+
         self.user_one = User.objects.create(
-            email='user_one@test.case'
+            email=self.user_one_email
         )
         self.user_two = User.objects.create(
             email='user_two@test.case'
@@ -34,6 +35,9 @@ class BaseTestCase(
         self.user_three = User.objects.create(
             email='user_three@test.case'
         )
+
+        self.user_one.set_password(self.user_one_password)
+        self.user_one.save()
 
         expires = datetime.now(timezone.utc)
         expires += timedelta(hours=1)
@@ -95,7 +99,7 @@ class BaseTestCase(
         )
 
     def authenticate_with_token(
-        self: Type[TestCase],
+        self: Type,
         token: Type[AccessToken],
     ) -> None:
 

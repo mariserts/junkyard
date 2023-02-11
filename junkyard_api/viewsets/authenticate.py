@@ -29,12 +29,12 @@ from ..serializers.authenticate import (
     PasswordSerializer,
     TokenSerializer,
 )
-from ..signers.exceptions import (
+from ..cryptography.exceptions import (
     BadMaxAgeException,
     BadSignatureFormatException
 )
-from ..signers.sign import sign_object
-from ..signers.unsign import unsign_object
+from ..cryptography.sign import sign_object
+from ..cryptography.unsign import unsign_object
 
 from oauth2_provider.contrib.rest_framework import OAuth2Authentication
 
