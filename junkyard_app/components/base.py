@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from typing import Type
 
-from django.template import RequestContext
 from django.template.loader import render_to_string
 
 
@@ -31,7 +30,7 @@ class BaseComponent:
         return render_to_string(
             self.template,
             self.get_context(),
-            context_instance=RequestContext(self.request)
+            request=self.request,
         )
 
     def __repr__(
