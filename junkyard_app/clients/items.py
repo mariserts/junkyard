@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-from typing import List, Type
+from typing import Type
 
-from .http import HttpClient
+from .http import HttpRequest
 
 from ..conf import settings
 
@@ -13,16 +13,16 @@ class ItemsClient:
     def get_items(
         self: Type,
         token: str,
+        project_pk: int,
         page: int = 1,
         count: int = 10,
-        item_types: List[str] = [],
     ) -> bool:
 
-        url = f'{self.hostname}/api/items/'
+        url = f'{self.hostname}/api/projects/{project_pk}/items/'
         url += f'?page={page}'
         url += f'&count={count}'
 
-        return HttpClient(
+        return HttpRequest(
             url=url,
             method='GET',
             headers={'Authorization': f'Bearer {token}'},

@@ -3,14 +3,15 @@ from typing import Type
 from django.http.request import HttpRequest
 from django.shortcuts import HttpResponse, render
 
-from ..clients.projects import ProjectsClient
+from ..clients.items import ItemsClient
+
 from ..components.headings import HeadingH1Component
-from ..components.lists import ProjectsListComponent
+from ..components.lists import ItemsListComponent
 
 from .base import AuthenticatedViewSet
 
 
-class CmsHomePageViewSet(
+class CmsProjectHomePageViewSet(
     AuthenticatedViewSet
 ):
 
@@ -21,18 +22,21 @@ class CmsHomePageViewSet(
     ):
 
         context = super().get_context()
-
         access_token = self.get_api_token()
 
-        projects = ProjectsClient().get_projects(access_token)
+        page = 1
+        count = 10
+
+        items = ItemsClient().get_items(
+            access_token,
+            self.kwargs['project_pk'],
+            page,
+            count
+        )
 
         context['page'] = {
-            'title': 'CMS Overview',
+            'title': 'Project Overview',
             'subtitle': None
-        }
-
-        context['results'] = {
-            'list_items': projects['results']
         }
 
         context['components'] = [
@@ -41,9 +45,9 @@ class CmsHomePageViewSet(
                 text=context['page']['title'],
                 subtitle=context['page']['subtitle']
             ),
-            ProjectsListComponent(
+            ItemsListComponent(
                 self.request,
-                items=projects['results']
+                items=items['results'],
             )
         ]
 
@@ -52,7 +56,9 @@ class CmsHomePageViewSet(
     def get(
         self: Type,
         request: HttpRequest,
+        project_pk: int,
     ) -> HttpResponse:
+
         return render(
             request,
             self.template,

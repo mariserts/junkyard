@@ -57,6 +57,14 @@ class Settings:
         return 'cms_homepage'
 
     @property
+    def URLNAME_CMS_PROJECT_HOMEPAGE(self):
+        return 'cms_project_homepage'
+
+    @property
+    def URLNAME_CMS_PROJECT_ITEM(self):
+        return 'cms_project_item'
+
+    @property
     def URLNAME_PUBLIC_HOMEPAGE(self):
         return 'public_homepage'
 

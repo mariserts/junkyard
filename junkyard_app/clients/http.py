@@ -17,7 +17,7 @@ default_session.mount('https://', adapter)
 default_session.mount('http://', adapter)
 
 
-class HttpClient:
+class HttpRequest:
 
     def __init__(
         self: Type,

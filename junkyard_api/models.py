@@ -515,7 +515,7 @@ class PermissionSet:
 
                     tenant_pk = str(object.tenant_id)
 
-                    data['projects'][project_id]['tenants'][tenant_pk] = {
+                    data['projects'][str(project_id)]['tenants'][tenant_pk] = {
                         'acl': 'cascading-permission',
                         'id': object.tenant_id,
                         'is_user': True

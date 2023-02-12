@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from typing import Type
 
-from .http import HttpClient
+from .http import HttpRequest
 
 from ..conf import settings
 
@@ -17,7 +17,7 @@ class ItemTypesClient:
 
         url = f'{self.hostname}/api/item-types/'
 
-        return HttpClient(
+        return HttpRequest(
             url=url,
             method='GET',
             headers={'Authorization': f'Bearer {token}'},
