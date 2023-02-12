@@ -4,6 +4,8 @@ from django.http.request import HttpRequest
 from django.shortcuts import HttpResponse, render
 
 from ..clients.projects import ProjectsClient
+from ..components.headings import HeadingH1Component
+from ..components.lists import ProjectsListComponent
 
 from .base import AuthenticatedViewSet
 
@@ -12,7 +14,7 @@ class CmsHomePageViewSet(
     AuthenticatedViewSet
 ):
 
-    template = 'junkyard_app/pages/list.html'
+    template = 'junkyard_app/pages/page.html'
 
     def get_context(
         self: Type
@@ -30,8 +32,20 @@ class CmsHomePageViewSet(
         }
 
         context['results'] = {
-            'projects': projects
+            'list_items': projects['results']
         }
+
+        context['components'] = [
+            HeadingH1Component(
+                self.request,
+                text=context['page']['title'],
+                subtitle=context['page']['subtitle']
+            ),
+            ProjectsListComponent(
+                self.request,
+                items=projects['results']
+            )
+        ]
 
         return context
 

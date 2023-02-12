@@ -12,15 +12,15 @@ from .filters import EmptyMultipleChoiceFilter
 
 class UsersFilterSet(FilterSet):
 
-    email = EmptyMultipleChoiceFilter(method='filter_by_email')
-    owner_of = NumberFilter(method='filter_by_owner_of')
-    admin_of = NumberFilter(method='filter_by_admin_of')
-
     class Meta:
         model = User
         fields = [
             'email',
         ]
+
+    email = EmptyMultipleChoiceFilter(method='filter_by_email')
+    owner_of = NumberFilter(method='filter_by_owner_of')
+    admin_of = NumberFilter(method='filter_by_admin_of')
 
     def filter_by_admin_of(
         self,

@@ -21,7 +21,7 @@ class ProjectsTenantsUsersViewSetPermission(permissions.BasePermission):
         view: Type
     ):
 
-        if request.method in permissions.SAFE_METHODS:
+        if request.method not in permissions.SAFE_METHODS:
 
             project_pk = view.kwargs['project_pk']
             tenant_pk = view.kwargs['tenant_pk']
@@ -74,6 +74,8 @@ class ProjectsTenantsUsersViewSet(
             is_active=True,
         ).prefetch_related(
             'tenants__tenant__users__project'
+        ).order_by(
+            *self.ordering_fields
         )
 
         return queryset

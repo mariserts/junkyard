@@ -1,0 +1,11 @@
+{% extends 'junkyard_app/base.html' %}
+
+{% block content %}
+
+    {% for component in components %}
+        <div class="container">
+            {{ component }}
+        </div>
+    {% endfor %}
+
+{% endblock %}

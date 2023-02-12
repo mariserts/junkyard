@@ -20,10 +20,11 @@ class ProjectsViewSetPermission(permissions.BasePermission):
         view: Type
     ):
 
-        if request.method in permissions.SAFE_METHODS:
+        if view.action == 'create':
+            return request.user.is_superuser
 
-            project_pk = view.kwargs['id']
-
+        if request.method not in permissions.SAFE_METHODS:
+            project_pk = view.kwargs['pk']
             return request.user.permission_set.is_project_user(project_pk)
 
         return True
@@ -56,10 +57,10 @@ class ProjectsViewSet(
         if self.request.user.is_authenticated is False:
             return Project.objects.none()
 
-        queryset = self.request.user.get_projects()
+        # queryset = self.request.user.get_projects()
+        #
+        # queryset = queryset.order_by(
+        #     *self.ordering_fields
+        # )
 
-        queryset = queryset.order_by(
-            *self.ordering_fields
-        )
-
-        return queryset
+        return self.queryset.order_by(*self.ordering_fields)

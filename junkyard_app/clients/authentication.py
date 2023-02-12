@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from typing import Type
 
-from .http import HttpClient
+from .http import HttpRequest
 
 from ..conf import settings
 
@@ -16,7 +16,7 @@ class AuthenticationClient:
         password: str,
     ) -> dict:
 
-        return HttpClient(
+        return HttpRequest(
             url=f'{self.hostname}/api/authenticate/register/',
             method='POST',
             data={
@@ -31,7 +31,7 @@ class AuthenticationClient:
         password: str,
     ) -> dict:
 
-        return HttpClient(
+        return HttpRequest(
             url=f'{self.hostname}/api/authenticate/sign-in/',
             method='POST',
             data={
@@ -45,7 +45,7 @@ class AuthenticationClient:
         token: str
     ) -> bool:
 
-        return HttpClient(
+        return HttpRequest(
             url=f'{self.hostname}/api/authenticate/sign-out/',
             method='POST',
             data={'token': token},

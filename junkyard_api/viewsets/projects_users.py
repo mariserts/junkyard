@@ -22,10 +22,8 @@ class ProjectsUsersViewSetPermission(permissions.BasePermission):
         view: Type
     ):
 
-        if request.method in permissions.SAFE_METHODS:
-
-            project_pk = view.kwargs['project_pk']
-
+        if request.method not in permissions.SAFE_METHODS:
+            project_pk = view.kwargs['pk']
             return request.user.permission_set.is_project_user(project_pk)
 
         return True
@@ -75,6 +73,10 @@ class ProjectsUsersViewSet(
             'tenants__tenant__users__project',
         )
 
-        return queryset.filter(
+        queryset = queryset.filter(
             is_active=True
+        ).order_by(
+            *self.ordering_fields
         )
+
+        return queryset

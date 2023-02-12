@@ -1,7 +1,53 @@
 # Junkyard - headless Python Django CMS
+
+Developing CMS for used car parts site
+
+- Multi project
 - Multi lingual
 - Multi tenant
 - API first
+
+## Endpoints
+
+### Docs
+- Swagger: http://localhost:8000/swagger/
+- Redoc: http://localhost:8000/redoc/
+
+### Authentication
+- /api/authenticate/get-password-reset-link/
+- /api/authenticate/authenticate/register/
+- /api/authenticate/set-password/
+- /api/authenticate/set-password-with-token/
+- /api/authenticate/sign-in/
+- /api/authenticate/sign-out/
+
+### Cryptography
+- /api/cryptography/sign/
+- /api/cryptography/unsign/
+
+### Item types
+- /api/item-types/
+
+### Languages
+- /api/languages/
+
+### Projects
+- /api/projects/<project_pk>/item-types/
+- /api/projects/<project_pk>/items/
+- /api/projects/<project_pk>/items/<pk>/
+- /api/projects/<project_pk>/items/<item_pk>/relations/ - TODO
+- /api/projects/<project_pk>/items/<item_pk>/relations/<pk>/ - TODO
+- /api/projects/<project_pk>/languages/
+- /api/projects/<project_pk>/tenants/
+- /api/projects/<project_pk>/tenants/<pk>/
+- /api/projects/<project_pk>/users/
+- /api/projects/<project_pk>/users/<pk>/
+- /api/projects/<pk>/
+- /api/projects/
+
+### Users
+- /api/users/
+- /api/users/<pk>/
 
 
 ## Setup

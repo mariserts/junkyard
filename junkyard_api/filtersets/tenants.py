@@ -8,18 +8,18 @@ from ..models import User, Tenant
 
 class TenantsFilterSet(FilterSet):
 
+    class Meta:
+        model = Tenant
+        fields = [
+            'is_root',
+        ]
+
     all_predecessors_of = NumberFilter(method='filter_by_all_predecessors_of')
     all_successors_of = NumberFilter(method='filter_by_all_successors_of')
     is_root = BooleanFilter(method='filter_by_is_root')
     predecessors_of = NumberFilter(method='filter_by_predecessors_of')
     successors_of = NumberFilter(method='filter_by_successors_of')
     user = NumberFilter(method='filter_by_available_to_user_id')
-
-    class Meta:
-        model = Tenant
-        fields = [
-            'is_root',
-        ]
 
     def filter_by_available_to_user_id(
         self,

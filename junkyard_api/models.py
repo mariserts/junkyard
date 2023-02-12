@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
-from datetime import datetime, timezone
 from typing import List, Type, Union
 
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.db.models import Q
 from django.db.models.query import QuerySet
 
 from networkx import DiGraph
@@ -63,90 +61,6 @@ class User(AbstractUser):
             setattr(self, '_permissions_set', PermissionSet(self))
         return self._permissions_set
 
-    def get_projects(
-        self: Type,
-        format: str = 'queryset',
-    ) -> Union[QuerySet, List[int]]:
-
-        ids = self.permission_set.get_projects()
-
-        if format == 'ids':
-            return ids
-
-        return Project.objects.filter(id__in=ids)
-
-    def get_project_tenants(
-        self: Type,
-        project_pk: int,
-        format: str = 'queryset',
-    ) -> Union[Type[QuerySet], List[int]]:
-
-        ids = self.permission_set.get_project_tenants(project_pk)
-
-        if format == 'ids':
-            return ids
-
-        if -1 in ids:
-            return Tenant.objects.none()
-
-        queryset = Tenant.objects.filter(
-            projects__project__pk=project_pk,
-        ).prefetch_related(
-            'projects__project'
-        )
-
-        if ids != []:
-            queryset = queryset.filter(
-                id__in=ids
-            )
-
-        return queryset
-
-    def get_project_items(
-        self: Type,
-        project_pk: int,
-    ) -> QuerySet:
-
-        ids = self.permission_set.get_project_tenants(project_pk)
-
-        if -1 in ids:
-            return Item.objects.none()
-
-        is_project_user = self.permission_set.is_project_user(project_pk)
-        if is_project_user is True:
-            return Item.objects.filter(
-                project__pk=project_pk,
-            ).select_related(
-                'project'
-            )
-
-        condition = Q()
-
-        condition.add(
-            Q(
-                project__pk=project_pk,
-                tenant_id__in=ids,
-            ),
-            Q.OR
-        )
-
-        condition.add(
-            Q(
-                project__pk=project_pk,
-                published_at__lt=datetime.now(timezone.utc),
-                published=True
-            ),
-            Q.OR
-        )
-
-        queryset = Item.objects.filter(
-            condition
-        ).select_related(
-            'project',
-        ).distinct()
-
-        return queryset
-
 
 class Project(models.Model):
 
@@ -204,6 +118,7 @@ class Tenant(models.Model):
 
         # XXXX Cache list(G.nodes)
         # Can add this after Tenant.save()
+        # Or in post.save() signal
 
         G = DiGraph()
 
@@ -443,7 +358,7 @@ class PermissionSet:
         tenant_pk: Union[int, str],
     ) -> bool:
 
-        if self.is_project_user() is True:
+        if self.is_project_user(project_pk) is True:
             return True
 
         return self.pset['projects'].get(
@@ -600,7 +515,7 @@ class PermissionSet:
 
                     tenant_pk = str(object.tenant_id)
 
-                    data['projects'][project_id]['tenants'][tenant_pk] = {
+                    data['projects'][str(project_id)]['tenants'][tenant_pk] = {
                         'acl': 'cascading-permission',
                         'id': object.tenant_id,
                         'is_user': True

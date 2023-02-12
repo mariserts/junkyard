@@ -9,16 +9,16 @@ from rest_framework.decorators import action
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from ..signers.exceptions import (
+from ..cryptography.exceptions import (
     BadMaxAgeException,
     BadSignatureFormatException
 )
-from ..signers.sign import sign_object
-from ..signers.unsign import unsign_object
-from ..serializers.signers import SigningSerializer, UnSigningSerializer
+from ..cryptography.sign import sign_object
+from ..cryptography.unsign import unsign_object
+from ..serializers.cryptography import SigningSerializer, UnSigningSerializer
 
 
-class SigningViewSet(
+class CryptographyViewSet(
     viewsets.GenericViewSet
 ):
 
@@ -28,9 +28,11 @@ class SigningViewSet(
 
     def get_serializer_class(
         self: Type
-    ) -> serializers.Serializer:
+    ) -> Type[serializers.Serializer]:
+
         if self.request.path.endswith('/sign/'):
             return self.serializer_class
+
         return UnSigningSerializer
 
     @action(
@@ -41,8 +43,8 @@ class SigningViewSet(
     )
     def sign(
         self: Type,
-        request: Request,
-    ) -> Response:
+        request: Type[Request],
+    ) -> Type[Response]:
 
         max_age = request.data.get('max_age', 0)
         salt = request.data.get('salt', '')
@@ -77,8 +79,8 @@ class SigningViewSet(
     )
     def unsign(
         self: Type,
-        request: Request,
-    ) -> Response:
+        request: Type[Request],
+    ) -> Type[Response]:
 
         salt = request.data.get('salt', '')
 

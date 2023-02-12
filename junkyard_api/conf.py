@@ -30,18 +30,8 @@ class Settings:
         return dj_settings._JUNKYARD_API_ITEM_TYPE_REGISTRY
 
     @property
-    def LANGUAGE_ENGLISH(self):
-        return ['en', 'English']
-
-    @property
-    def LANGUAGES(self):
-        return [
-            self.LANGUAGE_ENGLISH
-        ]
-
-    @property
-    def LANGUAGE_DEFAULT(self):
-        return self.LANGUAGE_ENGLISH[0]
+    def LANGUAGES_REGISTRY(self):
+        return dj_settings._JUNKYARD_API_LANGUAGES_REGISTRY
 
     @property
     def PATH_AUTHENTICATE(self):

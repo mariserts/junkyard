@@ -1,0 +1,10 @@
+<ul>
+    {% for item in items %}
+        <li>
+            <a href="{{ item.url }}">{{ item.text }}</a>
+            {% if item.help_text|default:None is not None %}
+                <br /><small>{{ item.help_text }}</small>
+            {% endif %}
+        </li>
+    {% endfor %}
+</ul>

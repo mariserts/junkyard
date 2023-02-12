@@ -1,0 +1,6 @@
+<h1>
+    {{ text }}<br />
+    {% if subtitle|default:None is not None %}
+        <small>{{ subtitle }}</small>
+    {% endif %}
+</h1>

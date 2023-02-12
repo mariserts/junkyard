@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from typing import List, Union
+from collections import OrderedDict
+from typing import List, Type, Union
 
 from rest_framework.serializers import Serializer
 
@@ -11,17 +12,13 @@ from ..exceptions import (
 from .registry_entry import RegistryEntry
 
 
-class BaseItemTypeRegistry:
-    pass
+class ItemTypeRegistry:
 
-
-class ItemTypeRegistry(BaseItemTypeRegistry):
-
-    types = {}
+    types = OrderedDict()
 
     def register(
-        self: BaseItemTypeRegistry,
-        registry_entry: RegistryEntry
+        self: Type,
+        registry_entry: Type[RegistryEntry]
     ) -> None:
         if registry_entry.name in self.types:
             raise ItemTypeDuplicationException(
@@ -30,9 +27,9 @@ class ItemTypeRegistry(BaseItemTypeRegistry):
         self.types[registry_entry.name] = registry_entry
 
     def find(
-        self: BaseItemTypeRegistry,
+        self: Type,
         name: str
-    ) -> Serializer:
+    ) -> Type[RegistryEntry]:
         try:
             return self.types[name]
         except KeyError:
@@ -41,9 +38,9 @@ class ItemTypeRegistry(BaseItemTypeRegistry):
             )
 
     def get_serializer(
-        self: BaseItemTypeRegistry,
+        self: Type,
         name: str
-    ) -> Union[None, Serializer]:
+    ) -> Union[None, Type[Serializer]]:
         try:
             entry = self.find(name)
         except ItemTypeNotFoundException:
@@ -51,7 +48,7 @@ class ItemTypeRegistry(BaseItemTypeRegistry):
         return entry.serializer
 
     def get_types(
-        self: BaseItemTypeRegistry,
+        self: Type,
         root_tenant_only: Union[None, bool] = None,
         format: str = 'list'
     ) -> List[RegistryEntry]:

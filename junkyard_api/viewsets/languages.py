@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from typing import List, Type, Union
+from typing import List, Type
 
 from django.db.models.query import QuerySet
 from django_filters import rest_framework as filters
@@ -18,7 +18,7 @@ class LanguagesViewSet(
 
     filter_backends = (filters.DjangoFilterBackend, )
     filterset_class = LanguagesFilterSet
-    permission_classes = (permissions.AllowAny, )
+    permission_classes = (permissions.IsAuthenticated, )
     queryset = QuerySet()
     serializer_class = LanguageSerializer
 
@@ -26,57 +26,22 @@ class LanguagesViewSet(
         self: Type,
     ) -> List[dict]:
 
-        languages = settings.LANGUAGES
+        languages = []
 
-        languages = list(
-            map(
-                lambda language:
-                    {
-                        'code': language[0],
-                        'name': language[1],
-                        'default': language[0] == settings.LANGUAGE_DEFAULT
-                    },
-                languages
-            )
-        )
+        for code, name in settings.LANGUAGES_REGISTRY.languages.items():
+            languages.append({
+                'code': code,
+                'name': name
+            })
 
         return languages
 
-    def get_language(
-        self: Type,
-        code: str,
-    ) -> dict:
-
-        languages = self.get_languages()
-
-        for language in languages:
-            if language['code'] == code:
-                return language
-
-        return None
-
     def list(
         self: Type,
-        request: Request,
-    ) -> Response:
+        request: Type[Request],
+    ) -> Type[Response]:
 
         languages = self.get_languages()
-
-        default = request.GET.get('default', None)
-
-        if default in ['true', 'false', '1', '0']:
-            default = default in ['true', '1']
-        else:
-            default = None
-
-        if default is not None:
-            languages = list(
-                filter(
-                    lambda language:
-                        language['default'] == default,
-                    languages
-                )
-            )
 
         data = {
             'next': None,
@@ -88,15 +53,3 @@ class LanguagesViewSet(
         }
 
         return Response(data)
-
-    def retrieve(
-        self: Type,
-        request: Request,
-        pk: Union[None, str] = None
-    ) -> Response:
-
-        language = self.get_language(pk)
-        if language is None:
-            return Response('Not found', status=404)
-
-        return Response(self.serializer_class(language).data)
