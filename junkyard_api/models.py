@@ -417,6 +417,8 @@ class PermissionSet:
         ).select_related(
             'project',
             # 'user',
+        ).prefetch_related(
+            'project__item_types',
         ).only(
             'id',
             'acl',
@@ -428,7 +430,7 @@ class PermissionSet:
                 'acl': object.acl,
                 'id': object.project_id,
                 'is_user': True,
-                'tenants': {}
+                'tenants': {},
             }
 
         # Get all Projects where user is TenantUser
@@ -447,6 +449,7 @@ class PermissionSet:
             'tenant',
         ).prefetch_related(
             'tenant__projects',
+            'project__item_types',
         ).exclude(
             project_id__in=project_ids_to_exclude
         ).only(
@@ -470,7 +473,7 @@ class PermissionSet:
                     'acl': None,
                     'id': object.project_id,
                     'is_user': False,
-                    'tenants': {}
+                    'tenants': {},
                 }
 
             data['projects'][project_pk]['tenants'][tenant_pk] = {
@@ -539,6 +542,29 @@ class PermissionSet:
                         'id': object.tenant_id,
                         'is_user': True
                     }
+
+        for project_pk in data['projects'].keys():
+
+            project = Project.objects.get(pk=project_pk)
+
+            item_types = project.item_types_for_tenants.all(
+                #
+            ).values_list(
+                'code',
+                flat=True
+            )
+
+            if data['projects'][project_pk]['is_user'] is True:
+                item_types += project.item_types_for_project.all(
+                    #
+                ).values_list(
+                    'code',
+                    flat=True
+                )
+
+            data['projects'][project_pk]['item_types'] = list(set(item_types))
+
+        print(data)
 
         return data
 
