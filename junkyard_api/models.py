@@ -542,7 +542,7 @@ class PermissionSet:
                         'is_user': True
                     }
 
-        # Get all item types for project
+        # Get all item types for projects
 
         for project_pk in data['projects'].keys():
 
