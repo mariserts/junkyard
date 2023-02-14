@@ -13,12 +13,28 @@ class ItemTypeRegistry:
 
     types = OrderedDict()
 
-    def manage_db(
+    def sync_db(
         self: Type
     ) -> None:
 
+        codes = list(self.types.keys())
+
+        for code in codes:
+
+            item_type = ItemType.objects.filter(code=code).first()
+
+            if item_type is None:
+                ItemType.objects.create(
+                    code=code,
+                    is_active=True
+                )
+
+            else:
+                item_type.is_active = True
+                item_type.save()
+
         ItemType.objects.all().exclude(
-            code__in=list(self.types.keys())
+            code__in=codes
         ).update(
             is_active=False
         )
@@ -34,16 +50,6 @@ class ItemTypeRegistry:
             )
 
         self.types[registry_entry.code] = registry_entry
-
-        item_type = ItemType.objects.filter(code=registry_entry.code).first()
-        if item_type is None:
-            ItemType.objects.create(
-                code=registry_entry.code,
-                is_active=True
-            )
-        else:
-            item_type.is_active = True
-            item_type.save()
 
     def get_type(
         self: Type,

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from typing import Type
 
+from django.db.models import Q
 from django.db.models.query import QuerySet
 
 from django_filters import rest_framework as filters
@@ -30,6 +31,17 @@ class ProjectsItemTypesViewSet(
         self: Type,
     ) -> QuerySet:
 
-        return self.queryset.order_by(
+        if self.request.user.is_authenticated is False:
+            return ItemType.objects.none()
+
+        project_pk = self.kwargs['project_pk']
+
+        condition = Q()
+        condition.add(Q(for_tenants__pk=project_pk), Q.OR)
+        condition.add(Q(for_projects__pk=project_pk), Q.OR)
+
+        return ItemType.objects.filter(
+            condition
+        ).order_by(
             *self.ordering_fields
         )

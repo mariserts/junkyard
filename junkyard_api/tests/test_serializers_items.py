@@ -3,6 +3,8 @@ from typing import Type
 
 from django.test import TestCase
 
+from junkyard_api_news.registry_entry import NewsRegistryEntry
+
 from ..models import Item, ItemRelation, ItemType, Project
 from ..serializers.items import BaseItemSerializer, ItemSerializer
 
@@ -14,7 +16,7 @@ class BaseItemSerializertTestCase(
     def setUp(self):
 
         self.project_one = Project.objects.create(name='One')
-        self.item_type = ItemType.objects.create(code='news')
+        self.item_type = ItemType.objects.get(code=NewsRegistryEntry.code)
 
         self.data = {
             'id': None,

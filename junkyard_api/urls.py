@@ -80,4 +80,4 @@ urlpatterns = [
 
 
 # Make all item types that are not registered inactive
-settings.ITEM_TYPE_REGISTRY.manage_db()
+settings.ITEM_TYPE_REGISTRY.sync_db()
