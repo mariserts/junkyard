@@ -16,12 +16,12 @@ class ProjectsItemsFilterSet(FilterSet):
             'item_type',
         ]
 
-    CHOICES_I_CAN_UPDATE = ('update', 'Update')
-    CHOICES_I_CAN = (
-        CHOICES_I_CAN_UPDATE,
+    CHOICES_ACTION_UPDATE = ('update', 'Update')
+    CHOICES_ACTION = (
+        CHOICES_ACTION_UPDATE,
     )
 
-    action = ChoiceFilter(method='filter_by_action', choices=CHOICES_I_CAN)
+    action = ChoiceFilter(method='filter_by_action', choices=CHOICES_ACTION)
 
     def get_project_pk(
         self: Type
@@ -41,14 +41,14 @@ class ProjectsItemsFilterSet(FilterSet):
             return queryset
 
         project_pk = self.get_project_pk()
+        pset = user.permission_set
 
-        user_is_project_user = user.is_project_user(project_pk)
+        user_is_project_user = pset.is_project_user(project_pk)
         if user_is_project_user is True:
             return True
 
-        if value == self.CHOICES_I_CAN_UPDATE[0]:
-            tenant_ids = user.get_project_tenants(project_pk, format='ids')
-            print(tenant_ids)
+        if value == self.CHOICES_ACTION_UPDATE[0]:
+            tenant_ids = pset.get_project_tenants(project_pk)
             return queryset.filter(tenant_id__in=tenant_ids)
 
         return queryset

@@ -7,6 +7,5 @@ from .serializers import NewsSerializer
 
 class NewsRegistryEntry(RegistryEntry):
 
-    name = settings.ITEM_TYPE
+    code = settings.ITEM_TYPE
     serializer = NewsSerializer
-    root_tenant_only = False

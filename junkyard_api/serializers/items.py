@@ -1,363 +1,256 @@
 # -*- coding: utf-8 -*-
-from typing import List, Tuple, Union
+from typing import List, Type, Union
 
 from rest_framework import serializers
+from rest_framework.exceptions import ValidationError
 
 from ..conf import settings
-from ..exceptions import ItemTypeNotFoundException
-from ..models import Item, ItemRelation, SearchVector, Tenant, User
-
-from .item_relations import NestedItemRelationSerializer
-from .mixins import ItemShortcutsMixin
+from ..models import Item, ItemType, ItemRelation
 
 
-class ItemSerializer(
-    ItemShortcutsMixin,
-    serializers.ModelSerializer
-):
+class BaseItemRelationSerializer(serializers.Serializer):
 
-    _existing_relations_ids = []
-    _createble_relations = []
+    id = serializers.IntegerField(
+        allow_null=True, required=False, read_only=True)
+    parent = serializers.IntegerField()
+    child = serializers.IntegerField(allow_null=True, required=False)
+    label = serializers.CharField()
+    metadata = serializers.JSONField(default=dict, required=False)
 
-    id = serializers.IntegerField(required=False)
-    item_type = serializers.ChoiceField(choices=())
+    created_at = serializers.DateTimeField(read_only=True)
+    updated_at = serializers.DateTimeField(read_only=True)
+
+
+class BaseItemSerializer(serializers.Serializer):
+
+    id = serializers.IntegerField(
+        allow_null=True, required=False, read_only=True)
+
+    project = serializers.IntegerField()
+    tenant = serializers.IntegerField(allow_null=True, required=False)
+    moved_to = serializers.IntegerField(allow_null=True, required=False)
+    item_type = serializers.CharField()
+
     metadata = serializers.JSONField(default=dict, required=False)
     translatable_content = serializers.JSONField(default=list, required=False)
+
+    parent_items = BaseItemRelationSerializer(many=True, required=False)
+
+    archived = serializers.BooleanField(default=False)
+    archived_at = serializers.DateTimeField(required=False, allow_null=True)
     published = serializers.BooleanField(default=False)
     published_at = serializers.DateTimeField(required=False, allow_null=True)
-    parent_items = NestedItemRelationSerializer(many=True, required=False)
+
+    created_at = serializers.DateTimeField(read_only=True)
+    updated_at = serializers.DateTimeField(read_only=True)
+
+    @staticmethod
+    def pre_save(
+        instance: Type,
+        validated_data: dict
+    ) -> None:
+        return None
+
+    @staticmethod
+    def post_save(
+        instance: Type,
+        validated_data: dict
+    ) -> None:
+        return None
+
+
+class BaseItemModelSerializer(
+    serializers.ModelSerializer
+):
 
     class Meta:
         model = Item
         fields = '__all__'
 
-    def __init__(
-        self: serializers.BaseSerializer,
-        *args: Union[List, Tuple],
-        **kwargs: dict
-    ) -> None:
 
-        super(ItemSerializer, self).__init__(*args, **kwargs)
+class ItemSerializer(
+    serializers.ModelSerializer
+):
 
-        field = self.fields['item_type']
-        field.choices = settings.ITEM_TYPE_REGISTRY.get_types(format='choices')
+    class Meta:
+        model = Item
+        exclude = [
+            'moved_to',
+            'project',
+            'tenant',
+        ]
 
-    #
-    # Representation
-    #
+    project_id = serializers.IntegerField()
+    tenant_id = serializers.IntegerField(required=False, allow_null=True)
+    moved_to_id = serializers.IntegerField(required=False, allow_null=True)
+
+    archived = serializers.BooleanField(default=False)
+    archived_at = serializers.DateTimeField(required=False, allow_null=True)
+    created_at = serializers.DateTimeField(read_only=True)
+    published = serializers.BooleanField(default=False)
+    published_at = serializers.DateTimeField(required=False, allow_null=True)
+    updated_at = serializers.DateTimeField(read_only=True)
 
     def to_representation(
-        self: serializers.BaseSerializer,
-        object: Union[Item, List[Item]],
-    ) -> Union[List, dict]:
+        self: Type,
+        object: Type[Item],
+    ) -> dict:
+        data = BaseItemModelSerializer(object).data
+        data['item_type'] = object.item_type.code
+        return data
 
-        if self.context.get('_nested', True) is True:
+    def run_validation_parent_items(
+        self: Type,
+        parent_items: List
+    ) -> dict:
+        instance_id = getattr(self.instance, 'id', None)
 
-            output = []
+        errors = []
+        ids = []
+        relations_to_create = []
+        relations_to_delete = []
+        relations_to_update = []
 
-            many = True
-            instances = object
+        for relation in parent_items:
 
-            if type(object) != list:
-                many = False
-                instances = [object, ]
+            relation['parent_id'] = relation.get('parent', None)
+            relation.pop('parent')
 
-            for instance in instances:
+            relation['child_id'] = relation.get('child', None)
+            relation.pop('child')
 
-                item_type = instance.item_type
-                serializer = settings.ITEM_TYPE_REGISTRY.get_serializer(
-                    item_type)
-                if serializer is None:
-                    serializer = ItemSerializer
+            id = relation.get('id', None)
+            child = relation.get('child_id', None)
+            parent = relation.get('parent_id', None)
 
-                context = self.context.copy()
-                context['_nested'] = False
+            if parent is None:
+                break
 
-                # XXXX perf issues: Doubles amount of validation?
-                output_data = serializer(instance, context=context).data
+            if id is not None and instance_id is not None:
+                if child == instance_id:
+                    relations_to_update.append(relation)
+                    ids.append(ids)
+                else:
+                    errors.append(
+                        'Can not update parent relations for other items')
 
-                output.append(output_data)
+            if id is None:
+                if child == instance_id:
+                    relations_to_create.append(relation)
+                else:
+                    errors.append(
+                        'Can not create parent relations for other items')
 
-            if many is True:
-                return output
-
-            return next(iter(output), None)
-
-        return super().to_representation(object)
-
-    #
-    # Field validation
-    #
-
-    def validate_item_type(self, value):
-
-        # Item type can not be changed if item is being updated
-
-        if self.instance is not None:
-            return self.instance_item_type
-
-        # Check item type when creating item
-
-        if self.instance is not None:
-            tenant_pk = self.instance_item_type
-        else:
-            tenant_pk = self.raw_tenant_pk
-
-        is_root = Tenant.is_root_tenant(tenant_pk)
-
-        try:
-            item_type = settings.ITEM_TYPE_REGISTRY.find(value)
-        except ItemTypeNotFoundException:
-            raise serializers.ValidationError(
-                'Item type does not exist'
-            )
-
-        if item_type.root_tenant_only is not is_root:
-            raise serializers.ValidationError(
-                'Tenant has no access to this item type'
-            )
-
-        return item_type.name
-
-    def validate_tenant(self, value):
-
-        # Tenant can not be changed if item is updated
+        if len(errors) != 0:
+            raise ValidationError(detail=str(errors))
 
         if self.instance is not None:
-            return self.instance.tenant
+            if self.context['request'].method.upper() == 'PUT':
+                relations_to_delete = list(
+                    self.instance.parents.all().exclude(
+                        id__in=ids
+                    )
+                )
 
-        # Check tenant when creating item
+        data = {
+            'create': relations_to_create,
+            'delete': relations_to_delete,
+            'update': relations_to_update,
+        }
 
-        if self.request_user is None:
-            raise serializers.ValidationError('No request user found')
+        return data
 
-        tenant_ids = User.get_tenants(self.request_user, format='ids')
+    def run_validation(
+        self: Type,
+        data: dict
+    ) -> dict:
 
-        if value.id not in tenant_ids:
-            raise serializers.ValidationError(
-                f'User has no access to tenant "{value}"'
+        _data = data.copy()
+
+        registry_entry = self.get_registry_entry(str(_data['item_type']))
+
+        validated_data = registry_entry.serializer().run_validation(data)
+
+        item_type_code = validated_data.get('item_type', None)
+        moved_to_id = validated_data.get('moved_to', None)
+        project_id = validated_data.get('project', None)
+        tenant_id = validated_data.get('tenant', None)
+        parent_items = validated_data.get('parent_items', [])
+
+        validated_data.pop('moved_to')
+        validated_data.pop('project')
+        validated_data.pop('tenant')
+        validated_data.pop('parent_items')
+
+        # Remap fields
+
+        validated_data['item_type'] = ItemType.objects.get(code=item_type_code)
+        validated_data['moved_to_id'] = moved_to_id
+        validated_data['project_id'] = project_id
+        validated_data['tenant_id'] = tenant_id
+        self._parent_items_set = self.run_validation_parent_items(parent_items)
+
+        return validated_data
+
+    def write_parent_relation_relations(
+        self: Type,
+        instance: Union[Type[Item], None]
+    ):
+
+        relation_set = getattr(self, '_parent_items_set', {})
+
+        create = relation_set.get('create', [])
+        delete = relation_set.get('delete', [])
+        update = relation_set.get('update', [])
+
+        for relation in delete:
+            relation.delete()
+
+        for relation in create:
+            relation['child_id'] = instance.id
+            ItemRelation.objects.create(**relation)
+
+        for relation in update:
+            ItemRelation.objects.filter(
+                id=relation['id'],
+                child_id=instance.id
+            ).update(
+                parent_id=relation['parent_id'],
+                label=relation.get('label', {}),
+                metadata=relation.get('metadata', {}),
             )
-
-        return value
-
-    #
-    # Save
-    #
 
     def save(
-        self: serializers.BaseSerializer,
+        self: Type,
         **kwargs: dict
     ) -> Item:
 
-        self.pre_save()
+        validated_data = {
+            **self.validated_data, **kwargs
+        }
 
-        validated_data = {**self.validated_data, **kwargs}
+        registry_entry = self.get_registry_entry(
+            validated_data['item_type'].code
+        )
 
-        self.set_parent_items_management_data(self.instance, validated_data)
+        registry_entry.serializer.pre_save(
+            self.instance,
+            validated_data
+        )
 
-        #
-        if 'parent_items' in self.validated_data:
-            del self.validated_data['parent_items']
-
-        #
         instance = super().save(**kwargs)
 
-        self.manage_parent_items_relations(instance, validated_data)
+        self.write_parent_relation_relations(instance)
 
-        self.post_save(instance, validated_data)
-        self.manage_search_vectors(instance)
+        registry_entry.serializer.post_save(
+            instance,
+            validated_data
+        )
 
         return instance
 
-    #
-    # Pre save actions
-    #
-
-    def pre_save(
-        self: serializers.BaseSerializer,
-    ) -> None:
-
-        """
-
-        Pre save actions to do
-
-        Returns:
-        - None
-
-        """
-
-        pass
-
-    #
-    # Post save actions
-    #
-
-    def set_parent_items_management_data(
-        self: serializers.BaseSerializer,
-        instance: Item,
-        validated_data: dict,
-    ) -> None:
-
-        """
-
-        Sets data for item relation management
-
-        Attrs:
-        - instance Item: - item object
-        - validated_data dict: - serializer validated data
-
-        Returns:
-        - None
-
-        """
-
-        parent_items = validated_data.get('parent_items', [])
-        instance_id = getattr(instance, 'id', None)
-
-        errors = {'parent_items': []}
-        self._parent_items_to_create = []
-        self._parent_items_to_update = []
-        self._parent_items_to_update_ids = []
-        self._parent_items_ids_to_delete = []
-        self._parent_items_existing_relations_ids = []
-
-        #
-        if instance is not None:
-            self._parent_items_existing_relations_ids = list(
-                instance.parent_items.all().values_list('id', flat=True)
-            )
-
-        #
-        for parent_item in parent_items:
-
-            child_id = parent_item.get('child_id', None)
-            id = parent_item.get('id', None)
-            create = id is None
-
-            if instance_id != child_id:
-                errors['parent_items'].append({
-                    'child': 'Child id must match instance id'
-                })
-            else:
-                if create is True:
-                    self._parent_items_to_create.append(parent_item)
-                else:
-                    self._parent_items_to_update_ids.append(id)
-                    self._parent_items_to_update.append(parent_item)
-
-        #
-        if len(errors['parent_items']) > 0:
-            raise serializers.ValidationError(errors)
-
-        #
-        if len(self._parent_items_existing_relations_ids) > 0:
-            self._parent_items_ids_to_delete = list(
-                set(self._parent_items_existing_relations_ids).difference(
-                    set(self._parent_items_to_update_ids)
-                )
-            )
-
-    def manage_parent_items_relations(
-        self: serializers.BaseSerializer,
-        instance: Item,
-        validated_data: dict,
-    ) -> None:
-
-        """
-
-        Manages item relation management
-
-        Attrs:
-        - instance Item: - saved item object
-        - validated_data dict: - serializer validated data
-
-        Returns:
-        - None
-
-        """
-
-        #
-        if len(self._parent_items_ids_to_delete) > 0:
-            ItemRelation.objects.filter(
-                id__in=self._parent_items_ids_to_delete
-            ).delete()
-
-        #
-        for parent_item in self._parent_items_to_create:
-            parent_item['child'] = instance
-            ItemRelation.objects.create(**parent_item)
-
-        #
-        for parent_item in self._parent_items_to_update:
-            parent_item['child'] = instance
-            ItemRelation.objects.filter(
-                id=parent_item['id']
-            ).update(
-                **parent_item
-            )
-
-    def post_save(
-        self: serializers.BaseSerializer,
-        instance: Item,
-        initial_validated_data: dict,
-    ) -> None:
-
-        """
-
-        Post save actions to do
-
-        Attrs:
-        - instance Item: item object
-        - initial_validated_data: initial validated data before save is called
-
-        Returns:
-        - None
-
-        """
-
-        pass
-
-    @staticmethod
-    def create_search_vectors(
-        instance: Item,
-    ) -> None:
-
-        """
-
-        Method to create search vectors
-        Called after item save in manage_search_vectors
-        Make metadata and translatable_content data more accessible
-
-        Attrs:
-        - instance Item: item object
-
-        Returns:
-        - None
-
-        """
-
-    def manage_search_vectors(
-        self: serializers.BaseSerializer,
-        instance: Item,
-    ) -> None:
-
-        """
-
-        Entrypoint for search vector management logic
-
-        Attrs:
-        - instance Item: item object
-
-        Returns:
-        - None
-
-        """
-
-        SearchVector.objects.filter(
-            item_id=instance.id
-        ).delete()
-
-        item_type = instance.item_type
-        serializer = settings.ITEM_TYPE_REGISTRY.get_serializer(item_type)
-        if serializer is not None:
-            serializer = serializer.create_search_vectors(instance)
+    def get_registry_entry(self, item_type):
+        registry_entry = settings.ITEM_TYPE_REGISTRY.get_type(item_type)
+        if registry_entry is None:
+            raise ValidationError(detail=f'Item type "{item_type}" not found')
+        return registry_entry

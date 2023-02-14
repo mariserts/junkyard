@@ -1,7 +1,13 @@
 # -*- coding: utf-8 -*-
 from rest_framework import serializers
 
+from ..models import ItemType
+
 
 class ItemTypeSerializer(serializers.Serializer):
 
-    name = serializers.CharField()
+    class Meta:
+        model = ItemType
+        fields = '__all__'
+
+    code = serializers.CharField()

@@ -4,6 +4,7 @@ from django.contrib.auth.mixins import AccessMixin
 from django.core.signing import BadSignature, SignatureExpired
 from django.shortcuts import redirect, reverse
 
+from .clients.users import UsersClient
 from .conf import settings
 from .signing import unsign
 
@@ -43,6 +44,30 @@ class SessionTokenMixin:
         return self.get_session_cookie() is not None
 
     def set_request_token_data(self, data):
+
+        if data is None:
+            return None
+
+        user = data.get('user', None)
+        access_token = data.get('access_token', None)
+
+        if user is None:
+            return None
+
+        if access_token is None:
+            return None
+
+        # XXXX Cache
+        # Cache key f'SessionTokenMixin.set_request_token_data__{access_token}'
+        # Cache timeout 10s-30s
+
+        response = UsersClient().get_user(
+            access_token,
+            data['user']['id']
+        )
+
+        data['user'] = response
+
         setattr(
             self.request,
             settings.REQUEST_TOKEN_ATTR_NAME,

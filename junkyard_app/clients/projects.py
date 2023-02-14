@@ -13,6 +13,7 @@ class ProjectsClient:
     def get_projects(
         self: Type,
         token: str,
+        action: str = None,
         page: int = 1,
         count: int = 10,
     ) -> bool:
@@ -20,6 +21,9 @@ class ProjectsClient:
         url = f'{self.hostname}/api/projects/'
         url += f'?page={page}'
         url += f'&count={count}'
+
+        if action is not None:
+            url += f'&action={action}'
 
         return HttpRequest(
             url=url,

@@ -49,6 +49,7 @@ class AuthenticationViewSet(
     PATH_SET_PASSWORD_TOKEN = 'set-password-with-token'
     PATH_SIGN_IN = 'sign-in'
     PATH_SIGN_OUT = 'sign-out'
+    PATH_TERMINATE_ACCOUNT = 'teminate'
 
     authentication_classes = (OAuth2Authentication, )
     queryset = QuerySet()
@@ -455,6 +456,26 @@ class AuthenticationViewSet(
         return Response(
             {},
             status=201
+        )
+
+    @action(
+        detail=False,
+        methods=['DELETE'],
+        name='terminate account',
+        url_path=PATH_TERMINATE_ACCOUNT,
+    )
+    @permission_classes([permissions.IsAuthenticated, ])
+    def terminate_account(
+        self: Type,
+        request: Request
+    ) -> Response:
+
+        #
+        self.request.user.delete()
+
+        return Response(
+            {},
+            status=200
         )
 
     def send_link(

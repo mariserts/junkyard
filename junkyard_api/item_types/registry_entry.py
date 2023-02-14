@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 class RegistryEntry:
 
-    name = None
+    code = None
     root_tenant_only = False
     serializer = None

@@ -9,7 +9,6 @@ from ..conf import settings
 from ..models import Item, User
 
 from .filters import EmptyMultipleChoiceFilter
-from .search_vectors import SearchVectorConditionGenerator
 
 
 class ItemsFilterSet(FilterSet):
@@ -21,7 +20,6 @@ class ItemsFilterSet(FilterSet):
         ]
 
     item_type = EmptyMultipleChoiceFilter(method='filter_by_item_type')
-    filter = EmptyMultipleChoiceFilter(method='filter_by_filter')
     for_user = NumberFilter(method='filter_by_for_user')
 
     def filter_by_for_user(
@@ -33,21 +31,6 @@ class ItemsFilterSet(FilterSet):
 
         queryset = queryset.filter(
             tenant_id__in=User.get_tenants(value, format='ids')
-        ).distinct()
-
-        return queryset
-
-    def filter_by_filter(
-        self,
-        queryset: QuerySet,
-        name: str,
-        value: Union[str, None]
-    ) -> QuerySet:
-
-        queryset = queryset.filter(
-            SearchVectorConditionGenerator(value).get_conditions()
-        ).prefetch_related(
-            'search_vectors'
         ).distinct()
 
         return queryset

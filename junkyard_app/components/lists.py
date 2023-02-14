@@ -4,6 +4,8 @@ from typing import List, Type
 from django.shortcuts import reverse
 
 from ..conf import settings
+from ..clients.items import ItemsClient
+from ..clients.projects import ProjectsClient
 
 from .base import BaseComponent
 
@@ -89,10 +91,56 @@ class ItemsListComponent(
     ListOfLinksComponent
 ):
 
+    errors = []
+    items = []
+    page = 1
+    pages = 1
+    total = 0
+    count = 10
+    link_next = None
+    link_previous = None
+
+    def __init__(
+        self: Type,
+        request: Type,
+        access_token: str,
+        project_pk: int,
+        page: int = 1,
+        count: int = 10,
+    ) -> None:
+
+        self.access_token = access_token
+        self.project_pk = project_pk
+        self.request = request
+        self.page = page
+        self.count = count
+
+        self.set_items_data()
+
+    def set_items_data(
+        self: Type
+    ) -> None:
+
+        response = ItemsClient().get_items(
+            self.access_token,
+            self.project_pk,
+            count=self.count,
+            page=self.page,
+            action='update',
+        )
+
+        self.items = response['results']
+        self.page = response['page']
+        self.pages = response['pages']
+        self.total = response['total']
+        self.link_next = response['next']
+        self.link_previous = response['previous']
+
     def get_item_name(
         self: Type,
         item: dict,
     ) -> str:
+
         return item['id']
 
     def get_item_help_text(
@@ -127,6 +175,48 @@ class ItemsListComponent(
 class ProjectsListComponent(
     ListOfLinksComponent
 ):
+
+    errors = []
+    items = []
+    page = 1
+    pages = 1
+    total = 0
+    count = 10
+    link_next = None
+    link_previous = None
+
+    def __init__(
+        self: Type,
+        request: Type,
+        access_token: str,
+        page: int = 1,
+        count: int = 10,
+    ) -> None:
+
+        self.access_token = access_token
+        self.request = request
+        self.page = page
+        self.count = count
+
+        self.set_items_data()
+
+    def set_items_data(
+        self: Type
+    ) -> None:
+
+        response = ProjectsClient().get_projects(
+            self.access_token,
+            action='create_items',
+            count=self.count,
+            page=self.page,
+        )
+
+        self.items = response['results']
+        self.page = response['page']
+        self.pages = response['pages']
+        self.total = response['total']
+        self.link_next = response['next']
+        self.link_previous = response['previous']
 
     def get_item_name(
         self: Type,

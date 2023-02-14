@@ -2,12 +2,9 @@
 from collections import OrderedDict
 from typing import List, Type, Union
 
-from rest_framework.serializers import Serializer
+from ..models import ItemType
 
-from ..exceptions import (
-    ItemTypeDuplicationException,
-    ItemTypeNotFoundException,
-)
+from ..exceptions import ItemTypeDuplicationException
 
 from .registry_entry import RegistryEntry
 
@@ -16,67 +13,47 @@ class ItemTypeRegistry:
 
     types = OrderedDict()
 
+    def manage_db(
+        self: Type
+    ) -> None:
+
+        ItemType.objects.all().exclude(
+            code__in=list(self.types.keys())
+        ).update(
+            is_active=False
+        )
+
     def register(
         self: Type,
         registry_entry: Type[RegistryEntry]
     ) -> None:
-        if registry_entry.name in self.types:
+
+        if registry_entry.code in self.types:
             raise ItemTypeDuplicationException(
-                f'Item type "{registry_entry.name}" already registered'
-            )
-        self.types[registry_entry.name] = registry_entry
-
-    def find(
-        self: Type,
-        name: str
-    ) -> Type[RegistryEntry]:
-        try:
-            return self.types[name]
-        except KeyError:
-            raise ItemTypeNotFoundException(
-                f'Item type "{name}" is not registered'
+                f'Item type "{registry_entry.code}" already registered'
             )
 
-    def get_serializer(
+        self.types[registry_entry.code] = registry_entry
+
+        item_type = ItemType.objects.filter(code=registry_entry.code).first()
+        if item_type is None:
+            ItemType.objects.create(
+                code=registry_entry.code,
+                is_active=True
+            )
+        else:
+            item_type.is_active = True
+            item_type.save()
+
+    def get_type(
         self: Type,
-        name: str
-    ) -> Union[None, Type[Serializer]]:
-        try:
-            entry = self.find(name)
-        except ItemTypeNotFoundException:
-            return None
-        return entry.serializer
+        code: str,
+    ) -> Union[Type[RegistryEntry], None]:
+
+        return self.types.get(code, None)
 
     def get_types(
         self: Type,
-        root_tenant_only: Union[None, bool] = None,
-        format: str = 'list'
     ) -> List[RegistryEntry]:
 
-        types = []
-
-        for key, value in self.types.items():
-
-            add = True
-
-            if root_tenant_only is not None:
-                if value.root_tenant_only is not root_tenant_only:
-                    add = False
-
-            if add is True:
-                types.append(value)
-
-        if format == 'list':
-            return types
-
-        output = []
-
-        if format == 'names':
-            for item_type in types:
-                output.append(item_type.name)
-
-        if format == 'choices':
-            for item_type in types:
-                output.append([item_type.name, item_type.name])
-
-        return output
+        return self.types

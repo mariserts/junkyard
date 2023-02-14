@@ -7,6 +7,5 @@ from .serializers import FlatPageSerializer
 
 class FlatPageRegistryEntry(RegistryEntry):
 
-    name = settings.ITEM_TYPE
-    root_tenant_only = True
+    code = settings.ITEM_TYPE
     serializer = FlatPageSerializer

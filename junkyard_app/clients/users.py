@@ -6,16 +6,17 @@ from .http import HttpRequest
 from ..conf import settings
 
 
-class ItemTypesClient:
+class UsersClient:
 
     hostname = settings.API_HOSTNAME
 
-    def get_item_types(
+    def get_user(
         self: Type,
         token: str,
+        user_pk: int,
     ) -> bool:
 
-        url = f'{self.hostname}/api/item-types/'
+        url = f'{self.hostname}/api/users/{user_pk}/'
 
         return HttpRequest(
             url=url,

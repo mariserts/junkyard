@@ -4,7 +4,7 @@ from django_filters import FilterSet
 from ..models import ItemType
 
 
-class ItemTypesFilterSet(FilterSet):
+class ProjectsItemTypesFilterSet(FilterSet):
 
     class Meta:
         model = ItemType

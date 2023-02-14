@@ -15,6 +15,15 @@ from .conf import settings
 from .managers import CustomUserManager
 
 
+class ItemType(models.Model):
+
+    code = models.CharField(max_length=255, unique=True, db_index=True)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.code
+
+
 class Application(AbstractApplication):
 
     raw_client_secret = models.CharField(
@@ -57,15 +66,27 @@ class User(AbstractUser):
 
     @property
     def permission_set(self):
-        if getattr(self, '_permissions_set', None) is None:
-            setattr(self, '_permissions_set', PermissionSet(self))
-        return self._permissions_set
+        attr_name = '_permission_set'
+        if getattr(self, attr_name, None) is None:
+            setattr(self, attr_name, PermissionSet(self))
+        return getattr(self, attr_name)
 
 
 class Project(models.Model):
 
     description = models.CharField(max_length=4096, blank=True, null=True)
     name = models.CharField(max_length=255, blank=True, null=True)
+
+    item_types_for_tenants = models.ManyToManyField(
+        ItemType,
+        related_name='for_tenants',
+        blank=True
+    )
+    item_types_for_project = models.ManyToManyField(
+        ItemType,
+        related_name='for_projects',
+        blank=True
+    )
 
     is_public = models.BooleanField(default=True)
     is_active = models.BooleanField(default=True, db_index=True)
@@ -221,11 +242,21 @@ class Item(models.Model):
         blank=True,
         null=True,
     )
-
-    item_type = models.CharField(
-        db_index=True,
-        max_length=255,
+    moved_to = models.ForeignKey(
+        'Item',
+        related_name='predecessor',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
     )
+    item_type = models.ForeignKey(
+        ItemType,
+        related_name='items',
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+    )
+
     metadata = models.JSONField(
         blank=True,
         default=dict,
@@ -236,6 +267,9 @@ class Item(models.Model):
         default=list,
         null=True
     )
+
+    archived = models.BooleanField(default=False)
+    archived_at = models.DateTimeField(blank=True, null=True)
 
     published = models.BooleanField(default=False)
     published_at = models.DateTimeField(blank=True, null=True)
@@ -271,23 +305,6 @@ class ItemRelation(models.Model):
         default=dict,
         null=True
     )
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-
-class SearchVector(models.Model):
-
-    item = models.ForeignKey(
-        Item,
-        on_delete=models.CASCADE,
-        related_name='search_vectors'
-    )
-
-    field_name = models.CharField(max_length=255)
-    language = models.CharField(max_length=255, blank=True, null=True)
-    raw_value = models.CharField(max_length=4096, blank=True, null=True)
-    vector = models.CharField(max_length=4096)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -381,6 +398,8 @@ class PermissionSet:
     def get_permissions_set(
         self: Type
     ) -> dict:
+
+        # XXXX Cache
 
         data = {
             'projects': {}

@@ -90,7 +90,7 @@ class ItemRelationAdmin(admin.TabularInline):
 
 class ItemAdmin(admin.ModelAdmin):
     inlines = [ItemRelationAdmin, ]
-    raw_id_fields = ['project', 'tenant']
+    raw_id_fields = ['project', 'tenant', 'item_type']
 
 
 class ProjectAdmin(admin.ModelAdmin):
@@ -114,6 +114,7 @@ class ProjectTenantUserAdmin(admin.ModelAdmin):
 
 
 admin.site.register(models.Item, ItemAdmin)
+admin.site.register(models.ItemType)
 admin.site.register(models.Project, ProjectAdmin)
 admin.site.register(models.ProjectTenant, ProjectTenantAdmin)
 admin.site.register(models.ProjectUser, ProjectUserAdmin)

@@ -10,14 +10,6 @@ from drf_yasg import openapi
 
 from .conf import settings
 
-# from .viewsets.item_types import ItemTypesViewSet
-# from .viewsets.item_relations import ItemRelationsViewSet
-# from .viewsets.items import ItemsViewSet
-# from .viewsets.languages import LanguagesViewSet
-# from .viewsets.signing import SigningViewSet
-# from .viewsets.tenants import TenantsViewSet
-# from .viewsets.users import UsersViewSet
-
 from .viewsets.authenticate import AuthenticationViewSet
 from .viewsets.item_types import ItemTypesViewSet
 from .viewsets.languages import LanguagesViewSet
@@ -49,6 +41,7 @@ schema_view = get_schema_view(
     ],
 )
 
+
 #
 router = routers.SimpleRouter()
 
@@ -69,7 +62,7 @@ projects_router.register(r'languages', ProjectsLanguagesViewSet, basename='langu
 projects_router.register(r'tenants', ProjectsTenantsViewSet, basename='tenants')
 projects_router.register(r'users', ProjectsUsersViewSet, basename='users')
 
-# /api/projects/<project_pk>/
+# /api/projects/<project_pk>/tenants/<tenant_pk>/
 tenant_router = routers.NestedSimpleRouter(projects_router, r'tenants', lookup='tenant')
 tenant_router.register(r'items', ProjectsTenantsItemsViewSet, basename='items')
 tenant_router.register(r'users', ProjectsTenantsUsersViewSet, basename='users')
@@ -84,3 +77,7 @@ urlpatterns = [
     path('api/', include(projects_router.urls)),
     path('api/', include(tenant_router.urls)),
 ]
+
+
+# Make all item types that are not registered inactive
+settings.ITEM_TYPE_REGISTRY.manage_db()
