@@ -80,7 +80,7 @@ class UserModelTestCase(TestCase):
             project=self.project_one,
         )
 
-        with self.assertNumQueries(4):
+        with self.assertNumQueries(5):
             pset = self.user_one.permission_set.dict()
 
         self.assertEquals(
@@ -118,7 +118,7 @@ class UserModelTestCase(TestCase):
             project=self.project_two,
         )
 
-        with self.assertNumQueries(6):
+        with self.assertNumQueries(7):
             pset = self.user_one.permission_set.dict()
 
         self.assertEquals(
@@ -164,7 +164,7 @@ class UserModelTestCase(TestCase):
             project=self.project_two,
         )
 
-        with self.assertNumQueries(7):
+        with self.assertNumQueries(9):
             pset = self.user_one.permission_set.dict()
 
         self.assertEquals(
@@ -179,7 +179,7 @@ class UserModelTestCase(TestCase):
             project=self.project_two,
         )
 
-        with self.assertNumQueries(4):
+        with self.assertNumQueries(5):
             pset = self.user_one.permission_set.dict()
 
         self.assertEquals(

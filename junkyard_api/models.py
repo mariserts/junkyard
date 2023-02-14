@@ -3,6 +3,7 @@ from typing import List, Type, Union
 
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.db.models import Q
 from django.db.models.query import QuerySet
 
 from networkx import DiGraph
@@ -416,13 +417,12 @@ class PermissionSet:
             project__is_active=True,
         ).select_related(
             'project',
-            # 'user',
-        ).prefetch_related(
-            'project__item_types',
+            'user',
         ).only(
             'id',
             'acl',
             'project_id',
+            'user_id',
         )
 
         for object in pu_objects:
@@ -449,7 +449,6 @@ class PermissionSet:
             'tenant',
         ).prefetch_related(
             'tenant__projects',
-            'project__item_types',
         ).exclude(
             project_id__in=project_ids_to_exclude
         ).only(
@@ -543,28 +542,33 @@ class PermissionSet:
                         'is_user': True
                     }
 
+        # Get all item types for project
+
         for project_pk in data['projects'].keys():
 
-            project = Project.objects.get(pk=project_pk)
-
-            item_types = project.item_types_for_tenants.all(
-                #
-            ).values_list(
-                'code',
-                flat=True
-            )
-
             if data['projects'][project_pk]['is_user'] is True:
-                item_types += project.item_types_for_project.all(
-                    #
-                ).values_list(
-                    'code',
-                    flat=True
+
+                condition = Q()
+                condition.add(Q(for_tenants__pk=project_pk), Q.OR)
+                condition.add(Q(for_projects__pk=project_pk), Q.OR)
+
+                queryset = ItemType.objects.filter(
+                    condition
+                ).only(
+                    'code'
                 )
 
-            data['projects'][project_pk]['item_types'] = list(set(item_types))
+            else:
 
-        print(data)
+                queryset = ItemType.objects.filter(
+                    for_tenants__pk=project_pk
+                ).only(
+                    'code'
+                )
+
+            queryset = queryset.values_list('code', flat=True)
+
+            data['projects'][project_pk]['item_types'] = list(queryset)
 
         return data
 
