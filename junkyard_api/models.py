@@ -393,6 +393,29 @@ class PermissionSet:
         return False
 
     #
+    # Item types
+    #
+
+    def has_access_to_project_item_type(
+        self: Type,
+        project_pk: str,
+        code: str,
+    ):
+
+        codes = self.pset.get(
+            'projects',
+            {}
+        ).get(
+            str(project_pk),
+            {}
+        ).get(
+            'item_types',
+            []
+        )
+
+        return str(code) in codes
+
+    #
     #
     #
 

@@ -57,14 +57,14 @@ router.register(r'users', UsersViewSet, basename='users')
 # /api/projects/
 projects_router = routers.NestedSimpleRouter(router, r'projects', lookup='project')
 projects_router.register(r'item-types', ProjectsItemTypesViewSet, basename='item-types')
-projects_router.register(r'items', ProjectsItemsViewSet, basename='items')
+projects_router.register(r'items', ProjectsItemsViewSet, basename=settings.BASENAME_PROJECTS_ITEMS)
 projects_router.register(r'languages', ProjectsLanguagesViewSet, basename='languages')
 projects_router.register(r'tenants', ProjectsTenantsViewSet, basename='tenants')
 projects_router.register(r'users', ProjectsUsersViewSet, basename='users')
 
 # /api/projects/<project_pk>/tenants/<tenant_pk>/
 tenant_router = routers.NestedSimpleRouter(projects_router, r'tenants', lookup='tenant')
-tenant_router.register(r'items', ProjectsTenantsItemsViewSet, basename='items')
+tenant_router.register(r'items', ProjectsTenantsItemsViewSet, basename=settings.BASENAME_PROJECTS_TENANTS_ITEMS)
 tenant_router.register(r'users', ProjectsTenantsUsersViewSet, basename='users')
 
 

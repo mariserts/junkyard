@@ -9,5 +9,3 @@ class ItemTypeSerializer(serializers.Serializer):
     class Meta:
         model = ItemType
         fields = '__all__'
-
-    code = serializers.CharField()

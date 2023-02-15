@@ -1,10 +1,12 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime, timezone
-from typing import Type
+from typing import List, Type
 
 from django.db.models.query import QuerySet
 
 from rest_framework import mixins, permissions, viewsets
+from rest_framework.exceptions import ValidationError
+from rest_framework.response import Response
 
 from django_filters import rest_framework as filters
 
@@ -24,13 +26,10 @@ class ProjectsTenantsItemsViewSetPermission(permissions.BasePermission):
 
         if request.method not in permissions.SAFE_METHODS:
 
-            project_pk = view.kwargs['project_pk']
             tenant_pk = view.kwargs['tenant_pk']
+            project_pk = view.kwargs['project_pk']
 
             pset = request.user.permission_set
-
-            if pset.is_project_user(project_pk) is True:
-                return True
 
             return pset.is_project_tenant_user(project_pk, tenant_pk)
 
@@ -90,3 +89,72 @@ class ProjectsTenantsItemsViewSet(
         )
 
         return queryset
+
+    def create(
+        self: Type,
+        request: Type,
+        *args: List,
+        **kwargs: dict
+    ) -> Type[Response]:
+
+        self._validate_request()
+
+        return super().create(request, *args, **kwargs)
+
+    def partial_update(
+        self: Type,
+        request: Type,
+        *args: List,
+        **kwargs: dict
+    ) -> Type[Response]:
+
+        self._validate_request()
+
+        return super().partial_update(request, *args, **kwargs)
+
+    def update(
+        self: Type,
+        request: Type,
+        *args: List,
+        **kwargs: dict
+    ) -> Type[Response]:
+
+        self._validate_request()
+
+        return super().update(request, *args, **kwargs)
+
+    def _validate_request(
+        self: Type
+    ) -> None:
+
+        project_id = self.request.data.get('project', None)
+        project_pk = self.kwargs.get('project_pk', None)
+
+        if str(project_id) != str(project_pk):
+            raise ValidationError(
+                'Can not update items from other projects',
+                code=400
+            )
+
+        tenant_id = self.request.data.get('tenant', None)
+        tenant_pk = self.kwargs.get('tenant_pk', None)
+
+        if str(tenant_id) != str(tenant_pk):
+            raise ValidationError(
+                'Can not update items from other tenants',
+                code=400
+            )
+
+        item_type = self.request.data.get('item_type', None)
+        pset = self.request.user.permission_set
+
+        has_access = pset.has_access_to_project_item_type(
+            project_id,
+            item_type
+        )
+
+        if has_access is False:
+            raise ValidationError(
+                f'No access to item type "{item_type}" in this project',
+                code=403
+            )

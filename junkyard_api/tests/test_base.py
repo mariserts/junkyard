@@ -6,7 +6,10 @@ from rest_framework.test import APITestCase
 
 from oauth2_provider.models import AccessToken
 
-from ..models import Application, Tenant, Project, User
+from junkyard_api_flat_page.registry_entry import FlatPageRegistryEntry
+from junkyard_api_news.registry_entry import NewsRegistryEntry
+
+from ..models import Application, ItemType, Tenant, Project, User
 
 
 class BaseTestCase(
@@ -21,6 +24,10 @@ class BaseTestCase(
             authorization_grant_type=Application.GRANT_PASSWORD,
             client_type=Application.CLIENT_CONFIDENTIAL,
         )
+
+        self.item_type_flat_page = ItemType.objects.get(
+            code=FlatPageRegistryEntry.code)
+        self.item_type_news = ItemType.objects.get(code=NewsRegistryEntry.code)
 
         #
         self.user_one_email = 'user_one@test.case'
@@ -91,12 +98,17 @@ class BaseTestCase(
             name='one',
             is_active=True,
         )
-        self.project_one = Project.objects.create(
+        self.project_two = Project.objects.create(
             name='two'
         )
-        self.project_one = Project.objects.create(
+        self.project_three = Project.objects.create(
             name='three'
         )
+
+        self.project_one.item_types_for_tenants.add(self.item_type_news)
+        self.project_one.item_types_for_project.add(self.item_type_flat_page)
+        self.project_one.item_types_for_project.add(self.item_type_news)
+        self.project_one.save()
 
     def authenticate_with_token(
         self: Type,

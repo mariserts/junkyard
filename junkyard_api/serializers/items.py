@@ -177,10 +177,10 @@ class ItemSerializer(
         tenant_id = validated_data.get('tenant', None)
         parent_items = validated_data.get('parent_items', [])
 
-        validated_data.pop('moved_to')
-        validated_data.pop('project')
-        validated_data.pop('tenant')
-        validated_data.pop('parent_items')
+        validated_data.pop('moved_to', None)
+        validated_data.pop('project', None)
+        validated_data.pop('tenant', None)
+        validated_data.pop('parent_items', None)
 
         # Remap fields
 

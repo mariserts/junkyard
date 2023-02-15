@@ -503,7 +503,7 @@ class AuthenticationViewSet(
 
     def get_full_request_hostname(
         self: Type,
-    ):
+    ) -> str:
         hostname = 'http'
         if self.request.is_secure is True:
             hostname += 's'

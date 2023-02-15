@@ -1,17 +1,22 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime, timezone
-from typing import Type
+from typing import List, Type, Union
 
 from django.db.models import Q
 from django.db.models.query import QuerySet
 
 from rest_framework import mixins, permissions, viewsets
+from rest_framework.exceptions import ValidationError
+from rest_framework.response import Response
+
 from django_filters import rest_framework as filters
 
+from ..clients.http import HttpRequest
 from ..filtersets.projects_items import ProjectsItemsFilterSet
 from ..models import Item
 from ..pagination import JunkyardApiPagination
 from ..serializers.items import ItemSerializer
+from ..utils.urls import get_projects_tenants_items_url
 
 
 class ProjectsItemsViewSetPermission(permissions.BasePermission):
@@ -23,8 +28,16 @@ class ProjectsItemsViewSetPermission(permissions.BasePermission):
     ):
 
         if request.method not in permissions.SAFE_METHODS:
+
+            tenant_id = request.data.get('tenant', None)
             project_pk = view.kwargs['project_pk']
-            return request.user.permission_set.is_project_user(project_pk)
+
+            pset = request.user.permission_set
+
+            if tenant_id is None:
+                return pset.is_project_user(project_pk)
+
+            return pset.is_project_tenant_user(project_pk, tenant_id)
 
         return True
 
@@ -90,3 +103,159 @@ class ProjectsItemsViewSet(
         )
 
         return queryset
+
+    def create(
+        self: Type,
+        request: Type,
+        *args: List,
+        **kwargs: dict
+    ) -> Type[Response]:
+
+        self._validate_request()
+
+        tenant_id = request.data.get('tenant', None)
+        if tenant_id is not None:
+            url = self._get_projects_tenants_items_url(tenant_id, detail=False)
+            return self._proxy('POST', url)
+
+        return super().create(request, *args, **kwargs)
+
+    def destroy(
+        self: Type,
+        request: Type,
+        *args: List,
+        **kwargs: dict
+    ) -> Type[Response]:
+
+        item_pk = kwargs['id']
+
+        object = Item.objects.get(pk=item_pk)
+
+        tenant_id = object.tenant_id
+
+        if tenant_id is not None:
+            url = self._get_projects_tenants_items_url(
+                tenant_id,
+                item_pk=item_pk
+            )
+            return self._proxy('DELETE', url)
+
+        return super().destroy(request, *args, **kwargs)
+
+    def partial_update(
+        self: Type,
+        request: Type,
+        *args: List,
+        **kwargs: dict
+    ) -> Type[Response]:
+
+        self._validate_request()
+
+        item_pk = kwargs['id']
+        tenant_id = request.data.get('tenant', None)
+
+        if tenant_id is not None:
+            url = self._get_projects_tenants_items_url(
+                tenant_id,
+                item_pk=item_pk
+            )
+            return self._proxy('PATCH', url)
+
+        return super().partial_update(request, *args, **kwargs)
+
+    def update(
+        self: Type,
+        request: Type,
+        *args: List,
+        **kwargs: dict
+    ) -> Type[Response]:
+
+        self._validate_request()
+
+        item_pk = kwargs['id']
+        tenant_id = request.data.get('tenant', None)
+
+        if tenant_id is not None:
+            url = self._get_projects_tenants_items_url(
+                tenant_id,
+                item_pk=item_pk
+            )
+            return self._proxy('PUT', url)
+
+        return super().update(request, *args, **kwargs)
+
+    def _validate_request(
+        self: Type
+    ) -> None:
+
+        project_id = self.request.data.get('project', None)
+        project_pk = self.kwargs.get('project_pk', None)
+
+        if str(project_id) != str(project_pk):
+            raise ValidationError(
+                'Can not update items from other projects',
+                code=400
+            )
+
+        item_type = self.request.data.get('item_type', None)
+        pset = self.request.user.permission_set
+
+        has_access = pset.has_access_to_project_item_type(
+            project_id,
+            item_type
+        )
+
+        if has_access is False:
+            raise ValidationError(
+                f'No access to item type "{item_type}" in this project',
+                code=403
+            )
+
+    def _proxy(
+        self: Type,
+        method: str,
+        url: str
+    ) -> Type[Response]:
+
+        request = HttpRequest().request(
+            data=self.request.data,
+            format='request',
+            headers=self.request.META,
+            method=method,
+            url=f'{self._get_full_request_hostname}{url}'
+        )
+
+        if request.ok() is True:
+
+            return Response(
+                request.json(),
+                status=request.status_code
+            )
+
+        return Response(
+            request.text,
+            status=request.status_code
+        )
+
+    def _get_projects_tenants_items_url(
+        self: Type,
+        tenant_pk: Union[int, str],
+        item_pk: Union[None, int, str] = None
+    ) -> str:
+
+        return get_projects_tenants_items_url(
+            self.request,
+            self.kwargs['project_pk'],
+            tenant_pk,
+            item_pk=item_pk,
+        )
+
+    def _get_full_request_hostname(
+        self: Type,
+    ) -> str:
+        hostname = 'http'
+        if self.request.is_secure is True:
+            hostname += 's'
+        hostname += '://'
+        hostname += self.request.get_host()
+        return hostname

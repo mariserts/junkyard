@@ -22,6 +22,14 @@ class Settings:
         return 'authenticate'
 
     @property
+    def BASENAME_PROJECTS_ITEMS(self):
+        return 'projects-items'
+
+    @property
+    def BASENAME_PROJECTS_TENANTS_ITEMS(self):
+        return 'projects-tenants-items'
+
+    @property
     def CASCADE_TENANT_PERMISSIONS(self):
         return os.getenv('CASCADE_TENANT_PERMISSIONS') in TRUE
 
