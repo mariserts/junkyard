@@ -30,7 +30,7 @@ class CryptographyViewSet(
         self: Type
     ) -> Type[serializers.Serializer]:
 
-        if self.request.path.endswith('/sign/'):
+        if self.action == 'sign':
             return self.serializer_class
 
         return UnSigningSerializer

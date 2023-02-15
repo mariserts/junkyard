@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from typing import Type
 
+from ..utils.urls import get_cryptography_url
+
 from .test_base import BaseTestCase
 
 
@@ -11,12 +13,12 @@ class CryptographyViewSetTestCase(
     def get_sign_url(
         self: Type,
     ):
-        return '/api/cryptography/sign/'
+        return get_cryptography_url(None)
 
     def get_unsign_url(
         self: Type,
     ):
-        return '/api/cryptography/unsign/'
+        return get_cryptography_url(None, False)
 
     def test_sign_view(
         self: Type

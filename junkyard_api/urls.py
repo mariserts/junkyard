@@ -48,7 +48,7 @@ router = routers.SimpleRouter()
 # Base urls
 # /api/
 router.register(settings.PATH_AUTHENTICATE, AuthenticationViewSet,basename=settings.BASENAME_AUTHENTICATE)
-router.register(r'cryptography', CryptographyViewSet, basename='cryptography')
+router.register(r'cryptography', CryptographyViewSet, basename=settings.BASENAME_CRYPTOGRAPHY)
 router.register(r'item-types', ItemTypesViewSet, basename='item-types')
 router.register(r'languages', LanguagesViewSet, basename='languages')
 router.register(r'projects', ProjectsViewSet, basename='projects')
