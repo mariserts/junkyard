@@ -14,12 +14,15 @@ def get_projects_tenants_items_url(
 
     detail = item_pk is not None
 
-    view_type = 'detail'
-    if detail is False:
-        view_type = 'list'
+    view_type = 'list'
+    args = [project_pk, tenant_pk]
+
+    if detail is True:
+        view_type = 'detail'
+        args = [project_pk, tenant_pk, item_pk]
 
     return reverse(
         f'{settings.BASENAME_PROJECTS_TENANTS_ITEMS}-{view_type}',
-        args=[project_pk, tenant_pk, item_pk],
+        args=args,
         request=request,
     )

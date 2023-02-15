@@ -15,6 +15,7 @@ class UtilsUrlsGetProjectsTenantsItemsUrlTestCase(
     ) -> None:
 
         url = get_projects_tenants_items_url(
+            None,
             1,
             1,
         )
@@ -25,6 +26,7 @@ class UtilsUrlsGetProjectsTenantsItemsUrlTestCase(
         )
 
         url = get_projects_tenants_items_url(
+            None,
             1,
             1,
             item_pk=1
