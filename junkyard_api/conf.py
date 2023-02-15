@@ -26,6 +26,10 @@ class Settings:
         return 'cryptography'
 
     @property
+    def BASENAME_PROJECTS_ITEM_TYPES(self):
+        return 'projects-item-types'
+
+    @property
     def BASENAME_PROJECTS_ITEMS(self):
         return 'projects-items'
 

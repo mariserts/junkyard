@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from typing import Type, Union
 
+from ..utils.urls import get_projects_item_types_url
+
 from .test_base import BaseTestCase
 
 
@@ -12,7 +14,7 @@ class ProjectsItemTypesViewSetTestCase(
         self: Type,
         project_pk: Union[str, int]
     ):
-        return f'/api/projects/{project_pk}/item-types/'
+        return get_projects_item_types_url(None, project_pk)
 
     def test_list_view(
         self: Type
@@ -33,17 +35,15 @@ class AuthenticatedProjectsItemTypesViewSetTestCase(
     ProjectsItemTypesViewSetTestCase
 ):
 
-    pass
+    def test_list_view(
+        self: Type
+    ):
 
-    # def test_list_view(
-    #     self: Type
-    # ):
-    #
-    #     self.authenticate_with_token(self.access_token_one)
-    #
-    #     request = self.client.get(self.get_url(1), format='json')
-    #
-    #     self.assertEquals(
-    #         request.status_code,
-    #         200
-    #     )
+        self.authenticate_with_token(self.access_token_one)
+
+        request = self.client.get(self.get_url(1), format='json')
+
+        self.assertEquals(
+            request.status_code,
+            200
+        )

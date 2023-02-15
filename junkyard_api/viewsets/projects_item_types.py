@@ -16,6 +16,7 @@ from ..serializers.item_types import ItemTypeSerializer
 
 class ProjectsItemTypesViewSet(
     mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
     viewsets.GenericViewSet
 ):
 

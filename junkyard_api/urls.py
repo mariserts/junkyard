@@ -56,7 +56,7 @@ router.register(r'users', UsersViewSet, basename='users')
 
 # /api/projects/
 projects_router = routers.NestedSimpleRouter(router, r'projects', lookup='project')
-projects_router.register(r'item-types', ProjectsItemTypesViewSet, basename='item-types')
+projects_router.register(r'item-types', ProjectsItemTypesViewSet, basename=settings.BASENAME_PROJECTS_ITEM_TYPES)
 projects_router.register(r'items', ProjectsItemsViewSet, basename=settings.BASENAME_PROJECTS_ITEMS)
 projects_router.register(r'languages', ProjectsLanguagesViewSet, basename='languages')
 projects_router.register(r'tenants', ProjectsTenantsViewSet, basename='tenants')
