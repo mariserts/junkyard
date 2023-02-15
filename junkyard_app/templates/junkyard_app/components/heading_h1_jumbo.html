@@ -1,0 +1,10 @@
+<div class="container-fluid jumbo">
+    <div class="container">
+        <h1 class="heading-h1">
+            {{ text }}<br />
+            {% if subtitle|default:None is not None %}
+                <small>{{ subtitle }}</small>
+            {% endif %}
+        </h1>
+    </div>
+</div>

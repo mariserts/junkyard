@@ -61,7 +61,7 @@ class ProjectsFilterSet(FilterSet):
     ) -> QuerySet:
 
         if self.request.user.is_authenticated is False:
-            return queryset
+            return queryset.none()
 
         if value == self.CHOICES_ACTION_CREATE_ITEMS[0]:
             project_ids = self.request.user.permission_set.get_projects()

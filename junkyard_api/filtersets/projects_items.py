@@ -45,7 +45,7 @@ class ProjectsItemsFilterSet(FilterSet):
 
         user_is_project_user = pset.is_project_user(project_pk)
         if user_is_project_user is True:
-            return True
+            return queryset
 
         if value == self.CHOICES_ACTION_UPDATE[0]:
             tenant_ids = pset.get_project_tenants(project_pk)

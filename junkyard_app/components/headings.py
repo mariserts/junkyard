@@ -8,9 +8,9 @@ class HeadingH1Component(
     BaseComponent
 ):
 
-    request = None
-    template = 'junkyard_app/components/heading_h1.html'
+    template = 'junkyard_app/components/heading_h1_jumbo.html'
     text = None
+    wrapper_classnames = ''
 
     def __init__(
         self: Type,

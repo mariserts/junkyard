@@ -3,6 +3,7 @@ from typing import Type
 from django.http.request import HttpRequest
 from django.shortcuts import HttpResponse, render
 
+from ..components.forms import ItemFilterFormComponent
 from ..components.headings import HeadingH1Component
 from ..components.lists import ItemsListComponent
 
@@ -34,6 +35,12 @@ class CmsProjectHomePageViewSet(
                 self.request,
                 text=context['page']['title'],
                 subtitle=context['page']['subtitle']
+            ),
+            ItemFilterFormComponent(
+                self.request,
+                access_token,
+                self.kwargs['project_pk'],
+                self.get_api_user_id(),
             ),
             ItemsListComponent(
                 self.request,

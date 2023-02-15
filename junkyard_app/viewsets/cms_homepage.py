@@ -5,6 +5,7 @@ from django.shortcuts import HttpResponse, render
 
 from ..components.headings import HeadingH1Component
 from ..components.lists import ProjectsListComponent
+from ..components.forms import ProjectFilterFormComponent
 
 from .base import AuthenticatedViewSet
 
@@ -13,7 +14,7 @@ class CmsHomePageViewSet(
     AuthenticatedViewSet
 ):
 
-    count = 500,
+    count = 500
     template = 'junkyard_app/pages/page.html'
 
     def get_context(
@@ -25,7 +26,7 @@ class CmsHomePageViewSet(
         access_token = self.get_api_token()
 
         context['page'] = {
-            'title': 'CMS Overview',
+            'title': 'Projects Overview',
             'subtitle': None
         }
 
@@ -34,6 +35,9 @@ class CmsHomePageViewSet(
                 self.request,
                 text=context['page']['title'],
                 subtitle=context['page']['subtitle']
+            ),
+            ProjectFilterFormComponent(
+                self.request
             ),
             ProjectsListComponent(
                 self.request,

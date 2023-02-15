@@ -14,7 +14,6 @@ class ListComponent(
     BaseComponent
 ):
 
-    request = None
     template = 'junkyard_app/components/list.html'
     item = []
 
@@ -91,6 +90,7 @@ class ItemsListComponent(
     ListOfLinksComponent
 ):
 
+    access_token = None
     errors = []
     items = []
     page = 1
@@ -114,8 +114,6 @@ class ItemsListComponent(
         self.request = request
         self.page = page
         self.count = count
-
-        self.set_items_data()
 
     def set_items_data(
         self: Type
@@ -171,6 +169,24 @@ class ItemsListComponent(
             }
         )
 
+    def get_context(
+        self: Type
+    ) -> dict:
+
+        self.set_items_data()
+
+        context = super().get_context()
+
+        context['pagination'] = {
+            'page': self.page,
+            'pages': self.pages,
+            'total': self.total,
+            'link_next': None,
+            'link_previous': None,
+        }
+
+        return context
+
 
 class ProjectsListComponent(
     ListOfLinksComponent
@@ -197,8 +213,6 @@ class ProjectsListComponent(
         self.request = request
         self.page = page
         self.count = count
-
-        self.set_items_data()
 
     def set_items_data(
         self: Type
@@ -234,3 +248,21 @@ class ProjectsListComponent(
             settings.URLNAME_CMS_PROJECT_HOMEPAGE,
             kwargs={'project_pk': item['id']}
         )
+
+    def get_context(
+        self: Type
+    ) -> dict:
+
+        self.set_items_data()
+
+        context = super().get_context()
+
+        context['pagination'] = {
+            'page': self.page,
+            'pages': self.pages,
+            'total': self.total,
+            'link_next': None,
+            'link_previous': None,
+        }
+
+        return context

@@ -45,7 +45,7 @@ class ProjectsItemTypesFilterSet(FilterSet):
             return queryset.none()
 
         if pset.is_project_user(project_pk) is True:
-            return queryset
+            return queryset.distinct()
 
         queryset = queryset.filter(
             for_tenants__pk=project_pk
@@ -53,7 +53,7 @@ class ProjectsItemTypesFilterSet(FilterSet):
             'for_tenants'
         )
 
-        return queryset
+        return queryset.distinct()
 
     def filter_by_used_by(
         self: Type,
@@ -81,4 +81,4 @@ class ProjectsItemTypesFilterSet(FilterSet):
                 'for_tenants'
             )
 
-        return queryset
+        return queryset.distinct()

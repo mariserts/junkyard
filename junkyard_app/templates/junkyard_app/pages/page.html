@@ -3,8 +3,8 @@
 {% block content %}
 
     {% for component in components %}
-        <div class="container">
-            {{ component }}
+        <div class="{{ component.wrapper_classnames }}">
+            {{ component.render }}
         </div>
     {% endfor %}
 

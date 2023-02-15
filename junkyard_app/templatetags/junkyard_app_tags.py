@@ -55,7 +55,7 @@ def mainmenu(context):
     else:
         links += [
             {
-                'text': 'CMS',
+                'text': 'Projects',
                 'url': reverse(settings.URLNAME_CMS_HOMEPAGE),
             },
             {
