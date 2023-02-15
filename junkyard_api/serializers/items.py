@@ -147,7 +147,7 @@ class ItemSerializer(
         if self.instance is not None:
             if self.context['request'].method.upper() == 'PUT':
                 relations_to_delete = list(
-                    self.instance.parents.all().exclude(
+                    self.instance.parent_items.all().exclude(
                         id__in=ids
                     )
                 )

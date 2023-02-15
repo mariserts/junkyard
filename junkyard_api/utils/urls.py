@@ -43,6 +43,28 @@ def get_projects_item_types_url(
     )
 
 
+def get_projects_items_url(
+    request: Type,
+    project_pk: Union[int, str],
+    item_pk: Union[None, str, int] = None
+) -> str:
+
+    detail = item_pk is not None
+
+    view_type = 'list'
+    args = [project_pk, ]
+
+    if detail is True:
+        view_type = 'detail'
+        args = [project_pk, item_pk]
+
+    return reverse(
+        f'{settings.BASENAME_PROJECTS_ITEMS}-{view_type}',
+        args=args,
+        request=request,
+    )
+
+
 def get_projects_tenants_items_url(
     request: Type,
     project_pk: Union[int, str],

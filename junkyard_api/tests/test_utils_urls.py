@@ -6,6 +6,7 @@ from django.test import TestCase
 from ..utils.urls import (
     get_cryptography_url,
     get_projects_item_types_url,
+    get_projects_items_url,
     get_projects_tenants_items_url
 )
 
@@ -87,4 +88,29 @@ class UtilsUrlsTestCase(
         self.assertEquals(
             url,
             '/api/cryptography/unsign/'
+        )
+
+    def test_get_projects_items_url(
+        self: Type
+    ) -> None:
+
+        url = get_projects_items_url(
+            None,
+            1
+        )
+
+        self.assertEquals(
+            url,
+            '/api/projects/1/items/'
+        )
+
+        url = get_projects_items_url(
+            None,
+            1,
+            1
+        )
+
+        self.assertEquals(
+            url,
+            '/api/projects/1/items/1/'
         )

@@ -127,7 +127,7 @@ class ProjectsItemsViewSet(
         **kwargs: dict
     ) -> Type[Response]:
 
-        item_pk = kwargs['id']
+        item_pk = kwargs['pk']
 
         object = Item.objects.get(pk=item_pk)
 
@@ -151,7 +151,7 @@ class ProjectsItemsViewSet(
 
         self._validate_request()
 
-        item_pk = kwargs['id']
+        item_pk = kwargs['pk']
         tenant_id = request.data.get('tenant', None)
 
         if tenant_id is not None:
@@ -172,7 +172,7 @@ class ProjectsItemsViewSet(
 
         self._validate_request()
 
-        item_pk = kwargs['id']
+        item_pk = kwargs['pk']
         tenant_id = request.data.get('tenant', None)
 
         if tenant_id is not None:
