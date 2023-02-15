@@ -14,6 +14,10 @@ class ClientRequestError(ClientException):
     pass
 
 
+class HTTPError(ClientException):
+    pass
+
+
 class UpStreamServerError(ClientException):
     pass
 
