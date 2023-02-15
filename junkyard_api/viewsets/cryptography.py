@@ -4,7 +4,8 @@ from typing import Type
 from django.core.signing import BadSignature, SignatureExpired
 from django.db.models.query import QuerySet
 
-from rest_framework import permissions, serializers, viewsets
+from rest_framework import permissions, viewsets
+from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import action
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -28,7 +29,7 @@ class CryptographyViewSet(
 
     def get_serializer_class(
         self: Type
-    ) -> Type[serializers.Serializer]:
+    ) -> Type:
 
         if self.action == 'sign':
             return self.serializer_class
@@ -46,25 +47,18 @@ class CryptographyViewSet(
         request: Type[Request],
     ) -> Type[Response]:
 
-        max_age = request.data.get('max_age', 0)
-        salt = request.data.get('salt', '')
+        serializer = self.get_serializer_class()(data=request.data)
+        if serializer.is_valid() is False:
+            return Response(
+                serializer.errors,
+                status=400
+            )
 
-        try:
-            data = request.data['data']
-        except KeyError:
-            raise serializers.ValidationError({
-                'data': ['"data" is required']
-            })
+        data = serializer.validated_data.get('data', {})
+        max_age = serializer.validated_data.get('max_age', 0)
+        salt = serializer.validated_data.get('salt', '')
 
-        if max_age is None:
-            max_age = 0
-
-        try:
-            data = sign_object(data, salt=salt, max_age=max_age)
-        except BadMaxAgeException:
-            raise serializers.ValidationError({
-                'max_age': ['"max_age" must be of type int or None']
-            })
+        data = sign_object(data, salt=salt, max_age=max_age)
 
         return Response(
             {'signature': data['signature']},
@@ -82,25 +76,26 @@ class CryptographyViewSet(
         request: Type[Request],
     ) -> Type[Response]:
 
-        salt = request.data.get('salt', '')
+        serializer = self.get_serializer_class()(data=request.data)
+        if serializer.is_valid() is False:
+            return Response(
+                serializer.errors,
+                status=400
+            )
 
-        try:
-            signature = request.data['signature']
-        except KeyError:
-            raise serializers.ValidationError({
-                'signature': ['"signature" is required']
-            })
+        salt = serializer.validated_data.get('salt', '')
+        signature = serializer.validated_data.get('signature', '')
 
         try:
             data = unsign_object(signature, salt=salt)
 
-        except BadSignatureFormatException as e:
-            raise serializers.ValidationError({
-                'signature': [e.msg(), ]
+        except BadSignatureFormatException:
+            raise ValidationError({
+                'signature': 'Bad signature format'
             })
 
         except BadMaxAgeException:
-            raise serializers.ValidationError({
+            raise ValidationError({
                 'max_age': ['"max_age" must be of type int or None']
             })
 
