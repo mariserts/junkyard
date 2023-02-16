@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from datetime import datetime, timezone
 from typing import List, Type, Union
 
 from django.db.models import Q
@@ -92,8 +91,7 @@ class ProjectsItemsViewSet(
         )
         condition.add(
             Q(
-                published_at__lt=datetime.now(timezone.utc),
-                published=True,
+                is_active=True,
             ),
             Q.OR
         )

@@ -35,10 +35,7 @@ class BaseItemSerializer(serializers.Serializer):
 
     parent_items = BaseItemRelationSerializer(many=True, required=False)
 
-    archived = serializers.BooleanField(default=False)
-    archived_at = serializers.DateTimeField(required=False, allow_null=True)
-    published = serializers.BooleanField(default=False)
-    published_at = serializers.DateTimeField(required=False, allow_null=True)
+    is_active = serializers.BooleanField(default=False)
 
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
@@ -83,12 +80,8 @@ class ItemSerializer(
     tenant_id = serializers.IntegerField(required=False, allow_null=True)
     moved_to_id = serializers.IntegerField(required=False, allow_null=True)
 
-    archived = serializers.BooleanField(default=False)
-    archived_at = serializers.DateTimeField(required=False, allow_null=True)
     created_at = serializers.DateTimeField(read_only=True)
-    published = serializers.BooleanField(default=False)
-    published_at = serializers.DateTimeField(required=False, allow_null=True)
-    updated_at = serializers.DateTimeField(read_only=True)
+    is_active = serializers.BooleanField(default=False)
 
     def to_representation(
         self: Type,

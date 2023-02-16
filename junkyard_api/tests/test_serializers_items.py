@@ -33,10 +33,7 @@ class BaseItemSerializertTestCase(
                 }]
             },
             'parent_items': [],
-            'archived': False,
-            'archived_at': None,
-            'published': False,
-            'published_at': None
+            'is_active': False,
         }
 
     def tearDown(self):

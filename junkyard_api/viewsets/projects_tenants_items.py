@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from datetime import datetime, timezone
 from typing import List, Type
 
 from django.db.models.query import QuerySet
@@ -84,8 +83,7 @@ class ProjectsTenantsItemsViewSet(
             return queryset
 
         queryset = queryset.filter(
-            published=True,
-            published_at__lt=datetime.now(timezone.utc),
+            is_active=True,
         )
 
         return queryset

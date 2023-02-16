@@ -262,11 +262,7 @@ class Item(models.Model):
 
     data = models.JSONField(default=dict, blank=True, null=True)
 
-    archived = models.BooleanField(default=False)
-    archived_at = models.DateTimeField(blank=True, null=True)
-
-    published = models.BooleanField(default=False)
-    published_at = models.DateTimeField(blank=True, null=True)
+    is_active = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
