@@ -20,6 +20,7 @@ class ItemType(models.Model):
 
     code = models.CharField(max_length=255, unique=True, db_index=True)
     is_active = models.BooleanField(default=True)
+    schema = models.JSONField(default=dict)
 
 
 class Application(AbstractApplication):

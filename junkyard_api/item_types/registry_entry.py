@@ -2,5 +2,5 @@
 class RegistryEntry:
 
     code = None
-    root_tenant_only = False
+    filterset = None
     serializer = None
