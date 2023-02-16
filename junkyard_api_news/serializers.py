@@ -16,9 +16,16 @@ class NewsTranslatableContentSerializer(
     content = serializers.CharField()
 
 
+class NewsDataSerializer(
+    serializers.Serializer
+):
+
+    translatable_content = NewsTranslatableContentSerializer(many=True)
+
+
 class NewsSerializer(
     BaseItemSerializer
 ):
 
     item_type = serializers.CharField(default=settings.ITEM_TYPE)
-    translatable_content = NewsTranslatableContentSerializer(many=True)
+    data = NewsDataSerializer()

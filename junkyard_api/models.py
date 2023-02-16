@@ -21,9 +21,6 @@ class ItemType(models.Model):
     code = models.CharField(max_length=255, unique=True, db_index=True)
     is_active = models.BooleanField(default=True)
 
-    def __str__(self):
-        return self.code
-
 
 class Application(AbstractApplication):
 
@@ -88,6 +85,7 @@ class Project(models.Model):
         related_name='for_projects',
         blank=True
     )
+    data = models.JSONField(default=dict)
 
     is_public = models.BooleanField(default=True)
     is_active = models.BooleanField(default=True, db_index=True)
@@ -114,6 +112,7 @@ class ProjectUser(models.Model):
         null=True,
         db_index=True,
     )
+    data = models.JSONField(default=dict)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -129,7 +128,8 @@ class Tenant(models.Model):
         null=True
     )
 
-    translatable_content = models.JSONField(default=list)
+    name = models.CharField(max_length=255, null=True, blank=True)
+    data = models.JSONField(default=dict)
     is_active = models.BooleanField(default=True, db_index=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -188,6 +188,7 @@ class ProjectTenant(models.Model):
         related_name='projects',
         on_delete=models.CASCADE
     )
+    data = models.JSONField(default=dict)
 
     is_active = models.BooleanField(default=True, db_index=True)
 
@@ -224,6 +225,7 @@ class ProjectTenantUser(models.Model):
         blank=True,
         null=True,
     )
+    data = models.JSONField(default=dict)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -258,16 +260,7 @@ class Item(models.Model):
         null=True,
     )
 
-    metadata = models.JSONField(
-        blank=True,
-        default=dict,
-        null=True
-    )
-    translatable_content = models.JSONField(
-        blank=True,
-        default=list,
-        null=True
-    )
+    data = models.JSONField(default=dict, blank=True, null=True)
 
     archived = models.BooleanField(default=False)
     archived_at = models.DateTimeField(blank=True, null=True)
@@ -277,11 +270,6 @@ class Item(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(
-        self: Type,
-    ) -> str:
-        return f'ID: {self.id} | {self.item_type}'
 
 
 class ItemRelation(models.Model):
@@ -301,7 +289,7 @@ class ItemRelation(models.Model):
         blank=True,
         null=True
     )
-    metadata = models.JSONField(
+    data = models.JSONField(
         blank=True,
         default=dict,
         null=True

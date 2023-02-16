@@ -74,23 +74,28 @@ class BaseTestCase(
         #
         self.tenant_one = Tenant.objects.create(
             parent=None,
-            translatable_content={'language': 'en', 'title': 'one'},
+            name='one',
+            data={'language': 'en', 'title': 'one'},
         )
         self.tenant_two = Tenant.objects.create(
             parent=self.tenant_one,
-            translatable_content={'language': 'en', 'title': 'two'},
+            name='two',
+            data={'language': 'en', 'title': 'two'},
         )
         self.tenant_three = Tenant.objects.create(
             parent=self.tenant_two,
-            translatable_content={'language': 'en', 'title': 'three'},
+            name='three',
+            data={'language': 'en', 'title': 'three'},
         )
         self.tenant_four = Tenant.objects.create(
             parent=self.tenant_three,
-            translatable_content={'language': 'en', 'title': 'four'},
+            name='four',
+            data={'language': 'en', 'title': 'four'},
         )
         self.tenant_five = Tenant.objects.create(
             parent=self.tenant_one,
-            translatable_content={'language': 'en', 'title': 'five'},
+            name='five',
+            data={'language': 'en', 'title': 'five'},
         )
 
         #

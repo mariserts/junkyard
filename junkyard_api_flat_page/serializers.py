@@ -16,9 +16,16 @@ class FlatPageTranslatableContentSerializer(
     content = serializers.CharField()
 
 
+class FlatPageDataSerializer(
+    serializers.Serializer
+):
+
+    translatable_content = FlatPageTranslatableContentSerializer(many=True)
+
+
 class FlatPageSerializer(
     BaseItemSerializer
 ):
 
     item_type = serializers.CharField(default=settings.ITEM_TYPE)
-    translatable_content = FlatPageTranslatableContentSerializer(many=True)
+    data = FlatPageDataSerializer()

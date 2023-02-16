@@ -15,7 +15,7 @@ class BaseItemRelationSerializer(serializers.Serializer):
     parent = serializers.IntegerField()
     child = serializers.IntegerField(allow_null=True, required=False)
     label = serializers.CharField()
-    metadata = serializers.JSONField(default=dict, required=False)
+    data = serializers.JSONField(default=dict, required=False)
 
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
@@ -31,8 +31,7 @@ class BaseItemSerializer(serializers.Serializer):
     moved_to = serializers.IntegerField(allow_null=True, required=False)
     item_type = serializers.CharField()
 
-    metadata = serializers.JSONField(default=dict, required=False)
-    translatable_content = serializers.JSONField(default=list, required=False)
+    data = serializers.JSONField(default=list, required=False)
 
     parent_items = BaseItemRelationSerializer(many=True, required=False)
 
@@ -210,14 +209,14 @@ class ItemSerializer(
             relation['child_id'] = instance.id
             ItemRelation.objects.create(**relation)
 
-        for relation in update:
+        for relation in update.copy():
+            id = relation.pop('id')
+            relation.pop('child_id')
             ItemRelation.objects.filter(
-                id=relation['id'],
+                id=id,
                 child_id=instance.id
             ).update(
-                parent_id=relation['parent_id'],
-                label=relation.get('label', {}),
-                metadata=relation.get('metadata', {}),
+                **relation
             )
 
     def save(

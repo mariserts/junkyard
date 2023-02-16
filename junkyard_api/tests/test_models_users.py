@@ -26,25 +26,30 @@ class UserModelTestCase(TestCase):
         self.user_two = User.objects.create(email='user_two@text.case')
 
         self.tenant_one = Tenant.objects.create(
+            name='one',
             is_active=True
         )
 
         self.tenant_two = Tenant.objects.create(
+            name='two',
             parent=self.tenant_one,
             is_active=True
         )
 
         self.tenant_three = Tenant.objects.create(
+            name='three',
             parent=self.tenant_two,
             is_active=True
         )
 
         self.tenant_four = Tenant.objects.create(
+            name='four',
             parent=self.tenant_three,
             is_active=True
         )
 
         self.tenant_five = Tenant.objects.create(
+            name='five',
             parent=self.tenant_one,
             is_active=True
         )

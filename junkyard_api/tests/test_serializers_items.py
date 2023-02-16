@@ -24,8 +24,14 @@ class BaseItemSerializertTestCase(
             'tenant': None,
             'moved_to': None,
             'item_type': self.item_type.code,
-            'metadata': {},
-            'translatable_content': [],
+            'data': {
+                'translatable_content': [{
+                    'language': 'en',
+                    'title': '1',
+                    'slug': 'en-1',
+                    'content': 'Hello world!'
+                }]
+            },
             'parent_items': [],
             'archived': False,
             'archived_at': None,

@@ -16,14 +16,15 @@ class ProjectsTenantsItemsViewSetTestCase(
         super().setUp()
 
         self.item_data = {
-            'metadata': {},
             'project': self.project_one.id,
-            'translatable_content': [{
-                'content': 'data',
-                'language': 'en',
-                'title': 'data',
-                'slug': 'data'
-            }],
+            'data': {
+                'translatable_content': [{
+                    'language': 'en',
+                    'title': '1',
+                    'slug': 'en-1',
+                    'content': 'Hello world!'
+                }]
+            },
         }
 
     def get_url(
