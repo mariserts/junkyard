@@ -1,11 +1,6 @@
 # -*- coding: utf-8 -*-
-from rest_framework import serializers
-
-from ..models import ItemType
+from .base import BaseItemTypeSerializer
 
 
-class ItemTypeSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = ItemType
-        fields = '__all__'
+class ItemTypeSerializer(BaseItemTypeSerializer):
+    pass

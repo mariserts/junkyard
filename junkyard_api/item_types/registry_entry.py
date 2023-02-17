@@ -2,5 +2,4 @@
 class RegistryEntry:
 
     code = None
-    filterset = None
     serializer = None

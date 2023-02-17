@@ -2,6 +2,8 @@
 from collections import OrderedDict
 from typing import List, Type, Union
 
+from django.db import connection
+
 from ..models import ItemType
 
 from ..exceptions import ItemTypeDuplicationException
@@ -17,6 +19,10 @@ class ItemTypeRegistry:
         self: Type
     ) -> None:
 
+        table_names = connection.introspection.table_names()
+        if 'junkyard_api_itemtype' not in table_names:
+            return None
+
         codes = list(self.types.keys())
 
         for code in codes:
@@ -26,7 +32,7 @@ class ItemTypeRegistry:
             if item_type is None:
                 ItemType.objects.create(
                     code=code,
-                    is_active=True
+                    is_active=True,
                 )
 
             else:

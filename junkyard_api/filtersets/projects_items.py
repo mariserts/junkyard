@@ -3,7 +3,7 @@ from typing import Type
 
 from django.db.models.query import QuerySet
 
-from django_filters import ChoiceFilter, FilterSet
+from django_filters import BooleanFilter, ChoiceFilter, FilterSet
 
 from ..models import Item
 
@@ -22,6 +22,7 @@ class ProjectsItemsFilterSet(FilterSet):
     )
 
     action = ChoiceFilter(method='filter_by_action', choices=CHOICES_ACTION)
+    is_active = BooleanFilter(method='filter_by_is_active')
 
     def get_project_pk(
         self: Type
@@ -50,5 +51,18 @@ class ProjectsItemsFilterSet(FilterSet):
         if value == self.CHOICES_ACTION_UPDATE[0]:
             tenant_ids = pset.get_project_tenants(project_pk)
             return queryset.filter(tenant_id__in=tenant_ids)
+
+        return queryset
+
+    def filter_by_is_active(
+        self: Type,
+        queryset: QuerySet,
+        name: str,
+        value: str,
+    ) -> QuerySet:
+
+        queryset = queryset.filter(
+            is_active=value
+        )
 
         return queryset

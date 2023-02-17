@@ -13,7 +13,9 @@ from ..models import (
 )
 
 
-class UserModelTestCase(TestCase):
+class UserModelTestCase(
+    TestCase
+):
 
     def setUp(
         self: Type
@@ -64,7 +66,7 @@ class UserModelTestCase(TestCase):
 
     def test_user_permission_set_one(self):
 
-        with self.assertNumQueries(4):
+        with self.assertNumQueries(3):
             pset = self.user_one.permission_set.dict()
 
         self.assertEquals(
@@ -77,7 +79,6 @@ class UserModelTestCase(TestCase):
         ProjectTenant.objects.create(
             tenant=self.tenant_one,
             project=self.project_one,
-            is_active=True,
         )
 
         ProjectUser.objects.create(
@@ -101,7 +102,7 @@ class UserModelTestCase(TestCase):
             project=self.project_two,
         )
 
-        with self.assertNumQueries(4):
+        with self.assertNumQueries(3):
             pset = self.user_one.permission_set.dict()
 
         self.assertEquals(
@@ -114,7 +115,6 @@ class UserModelTestCase(TestCase):
         ProjectTenant.objects.create(
             tenant=self.tenant_two,
             project=self.project_two,
-            is_active=True,
         )
 
         ProjectTenantUser.objects.create(
@@ -123,7 +123,7 @@ class UserModelTestCase(TestCase):
             project=self.project_two,
         )
 
-        with self.assertNumQueries(7):
+        with self.assertNumQueries(6):
             pset = self.user_one.permission_set.dict()
 
         self.assertEquals(
@@ -148,13 +148,11 @@ class UserModelTestCase(TestCase):
         ProjectTenant.objects.create(
             tenant=self.tenant_one,
             project=self.project_one,
-            is_active=True,
         )
 
         ProjectTenant.objects.create(
             tenant=self.tenant_two,
             project=self.project_two,
-            is_active=True,
         )
 
         ProjectTenantUser.objects.create(

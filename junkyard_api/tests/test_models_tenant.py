@@ -6,7 +6,9 @@ from django.test import TestCase
 from ..models import Tenant
 
 
-class TenantModelTestCase(TestCase):
+class TenantModelTestCase(
+    TestCase
+):
 
     def setUp(
         self: Type

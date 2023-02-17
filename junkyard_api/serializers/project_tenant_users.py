@@ -1,11 +1,6 @@
 # -*- coding: utf-8 -*-
-from rest_framework import serializers
-
-from ..models import ProjectTenantUser
+from .base import BaseProjectTenantUserSerializer
 
 
-class ProjectTenantUserSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = ProjectTenantUser
-        fields = '__all__'
+class ProjectTenantUserSerializer(BaseProjectTenantUserSerializer):
+    pass

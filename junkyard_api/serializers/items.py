@@ -7,21 +7,12 @@ from rest_framework.exceptions import ValidationError
 from ..conf import settings
 from ..models import Item, ItemType, ItemRelation
 
-
-class BaseItemRelationSerializer(serializers.Serializer):
-
-    id = serializers.IntegerField(
-        allow_null=True, required=False, read_only=True)
-    parent = serializers.IntegerField()
-    child = serializers.IntegerField(allow_null=True, required=False)
-    label = serializers.CharField()
-    data = serializers.JSONField(default=dict, required=False)
-
-    created_at = serializers.DateTimeField(read_only=True)
-    updated_at = serializers.DateTimeField(read_only=True)
+from .base import BaseModelSerializer, BaseSerializer
+from .base import BaseItemSerializer as BaseItemModelSerializer
+from .item_relations import CrudItemRelationSerializer
 
 
-class BaseItemSerializer(serializers.Serializer):
+class BaseItemSerializer(BaseSerializer):
 
     id = serializers.IntegerField(
         allow_null=True, required=False, read_only=True)
@@ -33,7 +24,7 @@ class BaseItemSerializer(serializers.Serializer):
 
     data = serializers.JSONField(default=list, required=False)
 
-    parent_items = BaseItemRelationSerializer(many=True, required=False)
+    parent_items = CrudItemRelationSerializer(many=True, required=False)
 
     is_active = serializers.BooleanField(default=False)
 
@@ -55,18 +46,7 @@ class BaseItemSerializer(serializers.Serializer):
         return None
 
 
-class BaseItemModelSerializer(
-    serializers.ModelSerializer
-):
-
-    class Meta:
-        model = Item
-        fields = '__all__'
-
-
-class ItemSerializer(
-    serializers.ModelSerializer
-):
+class ItemSerializer(BaseModelSerializer):
 
     class Meta:
         model = Item

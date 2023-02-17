@@ -55,6 +55,7 @@ class ProjectsTenantsUsersViewSet(
     )
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    swagger_schema = None
 
     # @action
     # invite user to become tenant user for this project

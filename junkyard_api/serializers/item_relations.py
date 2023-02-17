@@ -1,13 +1,19 @@
 # -*- coding: utf-8 -*-
 from rest_framework import serializers
 
-from ..models import ItemRelation
+from .base import BaseItemRelationSerializer, BaseSerializer
 
 
-class ItemRelationSerializer(serializers.ModelSerializer):
+class ItemRelationSerializer(BaseItemRelationSerializer):
+    pass
 
-    id = serializers.IntegerField(required=False)
 
-    class Meta:
-        model = ItemRelation
-        fields = '__all__'
+class CrudItemRelationSerializer(BaseSerializer):
+
+    id = serializers.IntegerField(allow_null=True, required=False)
+    parent = serializers.IntegerField()
+    child = serializers.IntegerField(allow_null=True, required=False)
+    label = serializers.CharField()
+
+    created_at = serializers.DateTimeField(read_only=True)
+    updated_at = serializers.DateTimeField(read_only=True)

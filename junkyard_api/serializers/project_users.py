@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
 from rest_framework import serializers
 
-from ..models import ProjectUser
+from .base import BaseSerializer, BaseProjectUserSerializer
 
 
-class ProjectUserSerializer(serializers.ModelSerializer):
+class ProjectUserCrudSerializer(BaseSerializer):
 
-    class Meta:
-        model = ProjectUser
-        fields = '__all__'
+    project = serializers.IntegerField()
+    user = serializers.IntegerField()
+
+
+class ProjectUserSerializer(BaseProjectUserSerializer):
+    pass

@@ -99,7 +99,6 @@ class AuthenticatedProjectsTenantsItemsViewSetTestCase(
         ProjectTenant.objects.create(
             project=self.project_one,
             tenant=self.tenant_one,
-            is_active=True,
         )
 
         ProjectTenantUser.objects.create(
@@ -132,7 +131,6 @@ class AuthenticatedProjectsTenantsItemsViewSetTestCase(
         ProjectTenant.objects.create(
             project=self.project_one,
             tenant=self.tenant_one,
-            is_active=True,
         )
 
         ProjectUser.objects.create(
@@ -164,7 +162,6 @@ class AuthenticatedProjectsTenantsItemsViewSetTestCase(
         ProjectTenant.objects.create(
             project=self.project_one,
             tenant=self.tenant_one,
-            is_active=True,
         )
 
         ProjectTenantUser.objects.create(
@@ -197,7 +194,6 @@ class AuthenticatedProjectsTenantsItemsViewSetTestCase(
         ProjectTenant.objects.create(
             project=self.project_one,
             tenant=self.tenant_one,
-            is_active=True,
         )
 
         ProjectTenantUser.objects.create(

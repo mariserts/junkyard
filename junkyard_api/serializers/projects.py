@@ -1,11 +1,8 @@
 # -*- coding: utf-8 -*-
-from rest_framework import serializers
-
-from ..models import Project
+from .base import BaseItemTypeSerializer, BaseProjectSerializer
 
 
-class ProjectSerializer(serializers.ModelSerializer):
+class ProjectSerializer(BaseProjectSerializer):
 
-    class Meta:
-        model = Project
-        fields = '__all__'
+    item_types_for_project = BaseItemTypeSerializer(many=True, read_only=True)
+    item_types_for_tenants = BaseItemTypeSerializer(many=True, read_only=True)

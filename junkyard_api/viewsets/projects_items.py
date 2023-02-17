@@ -1,44 +1,21 @@
 # -*- coding: utf-8 -*-
 from typing import List, Type, Union
 
-from django.db.models import Q
 from django.db.models.query import QuerySet
 
 from rest_framework import mixins, permissions, viewsets
-from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import NotFound, PermissionDenied
 from rest_framework.response import Response
 
 from django_filters import rest_framework as filters
 
-from ..clients.http import HttpRequest
 from ..filtersets.projects_items import ProjectsItemsFilterSet
 from ..models import Item
 from ..pagination import JunkyardApiPagination
 from ..serializers.items import ItemSerializer
 from ..utils.urls import get_projects_tenants_items_url
 
-
-class ProjectsItemsViewSetPermission(permissions.BasePermission):
-
-    def has_permission(
-        self: Type,
-        request: Type,
-        view: Type
-    ):
-
-        if request.method not in permissions.SAFE_METHODS:
-
-            tenant_id = request.data.get('tenant', None)
-            project_pk = view.kwargs['project_pk']
-
-            pset = request.user.permission_set
-
-            if tenant_id is None:
-                return pset.is_project_user(project_pk)
-
-            return pset.is_project_tenant_user(project_pk, tenant_id)
-
-        return True
+from .mixins import ProxyMixin
 
 
 class ProjectsItemsViewSet(
@@ -47,6 +24,7 @@ class ProjectsItemsViewSet(
     mixins.ListModelMixin,
     mixins.RetrieveModelMixin,
     mixins.UpdateModelMixin,
+    ProxyMixin,
     viewsets.GenericViewSet
 ):
 
@@ -54,10 +32,7 @@ class ProjectsItemsViewSet(
     filterset_class = ProjectsItemsFilterSet
     ordering_fields = ('-id', )
     pagination_class = JunkyardApiPagination
-    permission_classes = (
-        permissions.IsAuthenticated,
-        ProjectsItemsViewSetPermission,
-    )
+    permission_classes = (permissions.IsAuthenticated, )
     queryset = Item.objects.all()
     serializer_class = ItemSerializer
 
@@ -82,22 +57,8 @@ class ProjectsItemsViewSet(
         if pset.is_project_user(project_pk) is True:
             return queryset
 
-        condition = Q()
-        condition.add(
-            Q(
-                tenant_id__in=pset.get_project_tenants(project_pk)
-            ),
-            Q.OR
-        )
-        condition.add(
-            Q(
-                is_active=True,
-            ),
-            Q.OR
-        )
-
         queryset = queryset.filter(
-            condition
+            tenant_id__in=pset.get_project_tenants(project_pk)
         )
 
         return queryset
@@ -113,8 +74,10 @@ class ProjectsItemsViewSet(
 
         tenant_id = request.data.get('tenant', None)
         if tenant_id is not None:
-            url = self._get_projects_tenants_items_url(tenant_id, detail=False)
-            return self._proxy('POST', url)
+            url = self._get_full_request_hostname
+            url += self._get_projects_tenants_items_url(
+                tenant_id, detail=False)
+            return self._proxy(url)
 
         return super().create(request, *args, **kwargs)
 
@@ -125,18 +88,17 @@ class ProjectsItemsViewSet(
         **kwargs: dict
     ) -> Type[Response]:
 
-        item_pk = kwargs['pk']
+        self._validate_request()
 
-        object = Item.objects.get(pk=item_pk)
-
-        tenant_id = object.tenant_id
+        tenant_id = self._object.tenant_id
 
         if tenant_id is not None:
-            url = self._get_projects_tenants_items_url(
+            url = self._get_full_request_hostname
+            url += self._get_projects_tenants_items_url(
                 tenant_id,
-                item_pk=item_pk
+                item_pk=kwargs['pk']
             )
-            return self._proxy('DELETE', url)
+            return self._proxy(url)
 
         return super().destroy(request, *args, **kwargs)
 
@@ -153,11 +115,12 @@ class ProjectsItemsViewSet(
         tenant_id = request.data.get('tenant', None)
 
         if tenant_id is not None:
-            url = self._get_projects_tenants_items_url(
+            url = self._get_full_request_hostname
+            url += self._get_projects_tenants_items_url(
                 tenant_id,
                 item_pk=item_pk
             )
-            return self._proxy('PATCH', url)
+            return self._proxy(url)
 
         return super().partial_update(request, *args, **kwargs)
 
@@ -174,11 +137,12 @@ class ProjectsItemsViewSet(
         tenant_id = request.data.get('tenant', None)
 
         if tenant_id is not None:
-            url = self._get_projects_tenants_items_url(
+            url = self._get_full_request_hostname
+            url += self._get_projects_tenants_items_url(
                 tenant_id,
                 item_pk=item_pk
             )
-            return self._proxy('PUT', url)
+            return self._proxy(url)
 
         return super().update(request, *args, **kwargs)
 
@@ -186,54 +150,64 @@ class ProjectsItemsViewSet(
         self: Type
     ) -> None:
 
-        project_id = self.request.data.get('project', None)
         project_pk = self.kwargs.get('project_pk', None)
+        item_pk = self.kwargs.get('pk', None)
+
+        #
+        #
+        #
+
+        if self.action == 'destroy':
+
+            try:
+                self._object = Item.objects.get(
+                    project__pk=project_pk,
+                    pk=item_pk
+                )
+            except Item.DoesNotExist:
+                raise NotFound(f'Item "ID:{item_pk}" not found')
+
+            tenant_id = self._object.tenant_id
+            project_id = self._object.project_id
+
+        else:
+            tenant_id = self.request.data.get('tenant', None)
+            project_id = self.request.data.get('project', None)
 
         if str(project_id) != str(project_pk):
-            raise ValidationError(
-                'Can not update items from other projects',
-                code=400
-            )
+            raise PermissionDenied('Can not update items from other projects')
 
-        item_type = self.request.data.get('item_type', None)
+        #
+        #
+        #
+
         pset = self.request.user.permission_set
 
-        has_access = pset.has_access_to_project_item_type(
-            project_id,
-            item_type
-        )
+        if tenant_id is None:
+            if pset.is_project_user(project_pk) is False:
+                raise PermissionDenied(
+                    f'No access to project "ID:{project_pk}" items',
+                )
 
-        if has_access is False:
-            raise ValidationError(
-                f'No access to item type "{item_type}" in this project',
-                code=403
+        else:
+            if pset.is_project_tenant_user(project_pk, tenant_id) is False:
+                raise PermissionDenied(
+                    f'No access to tenant "ID:{tenant_id}" items',
+                )
+
+        if self.action != 'destroy':
+
+            item_type = self.request.data.get('item_type', None)
+
+            has_access = pset.has_access_to_project_item_type(
+                project_id,
+                item_type
             )
 
-    def _proxy(
-        self: Type,
-        method: str,
-        url: str
-    ) -> Type[Response]:
-
-        request = HttpRequest().request(
-            data=self.request.data,
-            format='request',
-            headers=self.request.META,
-            method=method,
-            url=f'{self._get_full_request_hostname}{url}'
-        )
-
-        if request.ok() is True:
-
-            return Response(
-                request.json(),
-                status=request.status_code
-            )
-
-        return Response(
-            request.text,
-            status=request.status_code
-        )
+            if has_access is False:
+                raise PermissionDenied(
+                    f'No access to item type "{item_type}" in this project',
+                )
 
     def _get_projects_tenants_items_url(
         self: Type,
@@ -247,13 +221,3 @@ class ProjectsItemsViewSet(
             tenant_pk,
             item_pk=item_pk,
         )
-
-    def _get_full_request_hostname(
-        self: Type,
-    ) -> str:
-        hostname = 'http'
-        if self.request.is_secure is True:
-            hostname += 's'
-        hostname += '://'
-        hostname += self.request.get_host()
-        return hostname

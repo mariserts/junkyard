@@ -54,6 +54,7 @@ class ProjectsTenantsItemsViewSet(
     )
     queryset = Item.objects.all()
     serializer_class = ItemSerializer
+    swagger_schema = None
 
     def get_queryset(
         self: Type

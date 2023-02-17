@@ -20,7 +20,10 @@ class ItemType(models.Model):
 
     code = models.CharField(max_length=255, unique=True, db_index=True)
     is_active = models.BooleanField(default=True)
-    schema = models.JSONField(default=dict)
+    schema = models.JSONField(default=dict, blank=True, null=True)
+
+    def __str__(self):
+        return self.code
 
 
 class Application(AbstractApplication):
@@ -51,6 +54,9 @@ class User(AbstractUser):
     REQUIRED_FIELDS = []
 
     objects = CustomUserManager()
+
+    def __str__(self):
+        return self.email
 
     def save(
         self: Type[models.Model],
@@ -86,13 +92,73 @@ class Project(models.Model):
         related_name='for_projects',
         blank=True
     )
-    data = models.JSONField(default=dict)
 
-    is_public = models.BooleanField(default=True)
     is_active = models.BooleanField(default=True, db_index=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+
+    @staticmethod
+    def get_all_item_types(
+        project_pk: int,
+        is_active: Union[bool, None] = None,
+    ) -> QuerySet:
+
+        condition = Q()
+        condition.add(Q(for_tenants__pk=project_pk), Q.OR)
+        condition.add(Q(for_projects__pk=project_pk), Q.OR)
+
+        queryset = ItemType.objects.filter(
+            condition
+        )
+
+        if is_active is not None:
+            queryset = queryset.filter(
+                is_active=True
+            )
+
+        return queryset
+
+    @staticmethod
+    def get_tenants_item_types(
+        project_pk: int,
+        is_active: Union[bool, None] = None,
+    ) -> QuerySet:
+
+        queryset = ItemType.objects.filter(
+            for_tenants__pk=project_pk
+        ).prefetch_related(
+            'for_tenants'
+        )
+
+        if is_active is not None:
+            queryset = queryset.filter(
+                is_active=True
+            )
+
+        return queryset
+
+    @staticmethod
+    def get_project_item_types(
+        project_pk: int,
+        is_active: Union[bool, None] = None,
+    ) -> QuerySet:
+
+        queryset = ItemType.objects.filter(
+            for_projects__pk=project_pk
+        ).prefetch_related(
+            'for_projects'
+        )
+
+        if is_active is not None:
+            queryset = queryset.filter(
+                is_active=True
+            )
+
+        return queryset
 
 
 class ProjectUser(models.Model):
@@ -107,13 +173,6 @@ class ProjectUser(models.Model):
         related_name='projects',
         on_delete=models.CASCADE
     )
-    acl = models.CharField(
-        max_length=255,
-        blank=True,
-        null=True,
-        db_index=True,
-    )
-    data = models.JSONField(default=dict)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -130,11 +189,14 @@ class Tenant(models.Model):
     )
 
     name = models.CharField(max_length=255, null=True, blank=True)
-    data = models.JSONField(default=dict)
+
     is_active = models.BooleanField(default=True, db_index=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
 
     @staticmethod
     def get_graph():
@@ -189,9 +251,6 @@ class ProjectTenant(models.Model):
         related_name='projects',
         on_delete=models.CASCADE
     )
-    data = models.JSONField(default=dict)
-
-    is_active = models.BooleanField(default=True, db_index=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -221,12 +280,6 @@ class ProjectTenantUser(models.Model):
         related_name='tenants',
         on_delete=models.CASCADE,
     )
-    acl = models.CharField(
-        max_length=255,
-        blank=True,
-        null=True,
-    )
-    data = models.JSONField(default=dict)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -284,11 +337,6 @@ class ItemRelation(models.Model):
     label = models.CharField(
         max_length=255,
         blank=True,
-        null=True
-    )
-    data = models.JSONField(
-        blank=True,
-        default=dict,
         null=True
     )
 
@@ -381,13 +429,12 @@ class PermissionSet:
     # Item types
     #
 
-    def has_access_to_project_item_type(
+    def get_project_item_types(
         self: Type,
         project_pk: str,
-        code: str,
-    ):
+    ) -> List[str]:
 
-        codes = self.pset.get(
+        tenant_codes = self.pset.get(
             'projects',
             {}
         ).get(
@@ -395,10 +442,40 @@ class PermissionSet:
             {}
         ).get(
             'item_types',
+            {}
+        ).get(
+            'tenants',
             []
         )
 
-        return str(code) in codes
+        if self.is_project_user(project_pk) is False:
+            return tenant_codes
+
+        project_codes = self.pset.get(
+            'projects',
+            {}
+        ).get(
+            str(project_pk),
+            {}
+        ).get(
+            'item_types',
+            {}
+        ).get(
+            'project',
+            []
+        )
+
+        codes = tenant_codes + project_codes
+
+        return list(set(codes))
+
+    def has_access_to_project_item_type(
+        self: Type,
+        project_pk: str,
+        code: str,
+    ) -> bool:
+
+        return code in self.get_project_item_types(project_pk)
 
     #
     #
@@ -417,6 +494,8 @@ class PermissionSet:
         if isinstance(self.user, User) is False:
             return data
 
+        project_ids_to_exclude = []
+
         # Get all Projects where user is ProjectUser
 
         pu_objects = ProjectUser.objects.filter(
@@ -424,18 +503,16 @@ class PermissionSet:
             user__is_active=True,
             project__is_active=True,
         ).select_related(
-            'project',
-            'user',
+            #
         ).only(
             'id',
-            'acl',
             'project_id',
             'user_id',
         )
 
         for object in pu_objects:
+            project_ids_to_exclude.append(object.project_id)
             data['projects'][str(object.project_id)] = {
-                'acl': object.acl,
                 'id': object.project_id,
                 'is_user': True,
                 'tenants': {},
@@ -443,27 +520,15 @@ class PermissionSet:
 
         # Get all Projects where user is TenantUser
 
-        project_ids_to_exclude = list(
-            pu_objects.values_list('project_id', flat=True)
-        )
-
         ptu_objects = ProjectTenantUser.objects.filter(
             user=self.user,
+            project__tenants__tenant__users__user=self.user,
             project__is_active=True,
             tenant__is_active=True,
-            tenant__projects__is_active=True,
         ).select_related(
-            'project',
-            'tenant',
-        ).prefetch_related(
-            'tenant__projects',
+            #
         ).exclude(
             project_id__in=project_ids_to_exclude
-        ).only(
-            'id',
-            'acl',
-            'project_id',
-            'tenant_id',
         )
 
         tenant_ids_to_exclude = []
@@ -477,14 +542,12 @@ class PermissionSet:
 
             if project_pk not in data['projects']:
                 data['projects'][project_pk] = {
-                    'acl': None,
                     'id': object.project_id,
                     'is_user': False,
                     'tenants': {},
                 }
 
             data['projects'][project_pk]['tenants'][tenant_pk] = {
-                'acl': object.acl,
                 'id': object.tenant.id,
                 'is_user': True,
             }
@@ -523,7 +586,6 @@ class PermissionSet:
                 )
 
                 nested_tenant_objects = ProjectTenant.objects.filter(
-                    is_active=True,
                     project_id=project_id,
                     project__is_active=True,
                     tenant__pk__in=ids,
@@ -532,9 +594,6 @@ class PermissionSet:
                     project_id__in=project_ids_to_exclude,
                 ).exclude(
                     tenant_id__in=tenant_ids_to_exclude,
-                ).select_related(
-                    'project',
-                    'tenant',
                 ).only(
                     'tenant_id',
                     'project',
@@ -545,7 +604,7 @@ class PermissionSet:
                     tenant_pk = str(object.tenant_id)
 
                     data['projects'][str(project_id)]['tenants'][tenant_pk] = {
-                        'acl': 'cascading-permission',
+                        # 'acl': 'cascading-permission',
                         'id': object.tenant_id,
                         'is_user': True
                     }
@@ -554,29 +613,30 @@ class PermissionSet:
 
         for project_pk in data['projects'].keys():
 
-            if data['projects'][project_pk]['is_user'] is True:
+            project_item_types_queryset = Project.get_project_item_types(
+                project_pk,
+                is_active=True,
+            ).only(
+                'code'
+            ).values_list(
+                'code',
+                flat=True
+            )
 
-                condition = Q()
-                condition.add(Q(for_tenants__pk=project_pk), Q.OR)
-                condition.add(Q(for_projects__pk=project_pk), Q.OR)
+            tenants_item_types_queryset = Project.get_tenants_item_types(
+                project_pk,
+                is_active=True,
+            ).only(
+                'code'
+            ).values_list(
+                'code',
+                flat=True
+            )
 
-                queryset = ItemType.objects.filter(
-                    condition
-                ).only(
-                    'code'
-                )
-
-            else:
-
-                queryset = ItemType.objects.filter(
-                    for_tenants__pk=project_pk
-                ).only(
-                    'code'
-                )
-
-            queryset = queryset.values_list('code', flat=True)
-
-            data['projects'][project_pk]['item_types'] = list(queryset)
+            data['projects'][project_pk]['item_types'] = {
+                'tenants': list(tenants_item_types_queryset),
+                'project': list(project_item_types_queryset),
+            }
 
         return data
 
