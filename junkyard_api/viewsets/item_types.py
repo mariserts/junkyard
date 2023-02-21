@@ -20,7 +20,7 @@ class ItemTypesViewSet(
 
     filter_backends = (filters.DjangoFilterBackend, )
     filterset_class = ItemTypesFilterSet
-    ordering_fields = ('code', )
+    ordering_fields = ['code', ]
     pagination_class = JunkyardApiPagination
     permission_classes = (permissions.IsAuthenticated, )
     queryset = ItemType.objects.all()

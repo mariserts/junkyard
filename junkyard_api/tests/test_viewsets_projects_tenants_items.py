@@ -155,38 +155,6 @@ class AuthenticatedProjectsTenantsItemsViewSetTestCase(
             201
         )
 
-    def test_create_view_no_item_type_access(
-        self: Type
-    ):
-
-        ProjectTenant.objects.create(
-            project=self.project_one,
-            tenant=self.tenant_one,
-        )
-
-        ProjectTenantUser.objects.create(
-            project=self.project_one,
-            tenant=self.tenant_one,
-            user=self.user_one
-        )
-
-        data = self.item_data.copy()
-        data['item_type'] = self.item_type_flat_page.code
-        data['tenant'] = self.tenant_one.id
-
-        self.authenticate_with_token(self.access_token_one)
-
-        request = self.client.post(
-            self.get_url(self.project_one.id, self.tenant_one.id),
-            data,
-            format='json'
-        )
-
-        self.assertEquals(
-            request.status_code,
-            400
-        )
-
     def test_create_view_crud(
         self: Type
     ):

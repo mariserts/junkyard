@@ -2,6 +2,7 @@
 from typing import List, Type
 
 from django.shortcuts import reverse
+from django.utils import dateparse
 
 from ..conf import settings
 from ..clients.items import ItemsClient
@@ -146,11 +147,9 @@ class ItemsListComponent(
         item: dict,
     ) -> str:
 
-        published_text = 'Unpublished'
-        if item['published'] is True:
-            published_text = 'Published'
+        created_at = dateparse.parse_datetime(item['created_at'])
 
-        text = f'{published_text}; '
+        text = f'Created at: {created_at.strftime("%d/%m/%Y %H:%M")}; '
         text += f'Item type: {item["item_type"]}; '
         text += f'Tenant: {item["tenant"]};'
 

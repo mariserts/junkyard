@@ -41,7 +41,7 @@ class ProjectsViewSet(
 
     filter_backends = (filters.DjangoFilterBackend, )
     filterset_class = ProjectsFilterSet
-    ordering_fields = ('name', )
+    ordering_fields = ['name', ]
     pagination_class = JunkyardApiPagination
     permission_classes = (
         permissions.IsAuthenticated,
@@ -57,10 +57,6 @@ class ProjectsViewSet(
         if self.request.user.is_authenticated is False:
             return Project.objects.none()
 
-        # queryset = self.request.user.get_projects()
-        #
-        # queryset = queryset.order_by(
-        #     *self.ordering_fields
-        # )
-
-        return self.queryset.order_by(*self.ordering_fields)
+        return self.queryset.order_by(
+            *self.ordering_fields
+        )

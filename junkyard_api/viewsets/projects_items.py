@@ -12,7 +12,7 @@ from django_filters import rest_framework as filters
 from ..filtersets.projects_items import ProjectsItemsFilterSet
 from ..models import Item
 from ..pagination import JunkyardApiPagination
-from ..serializers.items import ItemSerializer
+from ..serializers.projects_items import ProjectsItemsSerializer
 from ..utils.urls import get_projects_tenants_items_url
 
 from .mixins import ProxyMixin
@@ -30,11 +30,11 @@ class ProjectsItemsViewSet(
 
     filter_backends = (filters.DjangoFilterBackend, )
     filterset_class = ProjectsItemsFilterSet
-    ordering_fields = ('-id', )
+    ordering_fields = ['-created_at', ]
     pagination_class = JunkyardApiPagination
     permission_classes = (permissions.IsAuthenticated, )
     queryset = Item.objects.all()
-    serializer_class = ItemSerializer
+    serializer_class = ProjectsItemsSerializer
 
     def get_queryset(
         self: Type

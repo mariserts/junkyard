@@ -82,14 +82,9 @@ class Project(models.Model):
     description = models.CharField(max_length=4096, blank=True, null=True)
     name = models.CharField(max_length=255, blank=True, null=True)
 
-    item_types_for_tenants = models.ManyToManyField(
+    item_types = models.ManyToManyField(
         ItemType,
-        related_name='for_tenants',
-        blank=True
-    )
-    item_types_for_project = models.ManyToManyField(
-        ItemType,
-        related_name='for_projects',
+        related_name='projects',
         blank=True
     )
 
@@ -316,8 +311,6 @@ class Item(models.Model):
 
     data = models.JSONField(default=dict, blank=True, null=True)
 
-    is_active = models.BooleanField(default=False)
-
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -345,6 +338,8 @@ class ItemRelation(models.Model):
 
 
 class PermissionSet:
+
+    CACHE_TIMEOUT = 10
 
     pset = None
     user = None
@@ -434,7 +429,7 @@ class PermissionSet:
         project_pk: str,
     ) -> List[str]:
 
-        tenant_codes = self.pset.get(
+        codes = self.pset.get(
             'projects',
             {}
         ).get(
@@ -442,30 +437,8 @@ class PermissionSet:
             {}
         ).get(
             'item_types',
-            {}
-        ).get(
-            'tenants',
             []
         )
-
-        if self.is_project_user(project_pk) is False:
-            return tenant_codes
-
-        project_codes = self.pset.get(
-            'projects',
-            {}
-        ).get(
-            str(project_pk),
-            {}
-        ).get(
-            'item_types',
-            {}
-        ).get(
-            'project',
-            []
-        )
-
-        codes = tenant_codes + project_codes
 
         return list(set(codes))
 
@@ -484,8 +457,6 @@ class PermissionSet:
     def get_permissions_set(
         self: Type
     ) -> dict:
-
-        # XXXX Cache
 
         data = {
             'projects': {}
@@ -573,31 +544,38 @@ class PermissionSet:
             for project_id in projects_to_iter:
 
                 tenants = data['projects'][str(project_id)].get('tenants', {})
+                nested_tenant_objects = []
+                ids = []
 
-                ids = sum(
-                    list(
-                        map(
-                            lambda id:
-                                list(descendants(G, int(id))),
-                            tenants.keys()
-                        )
-                    ),
-                    []
-                )
+                try:
+                    ids = sum(
+                        list(
+                            map(
+                                lambda id:
+                                    list(descendants(G, int(id))),
+                                tenants.keys()
+                            )
+                        ),
+                        []
+                    )
+                except NetworkXError:
+                    pass
 
-                nested_tenant_objects = ProjectTenant.objects.filter(
-                    project_id=project_id,
-                    project__is_active=True,
-                    tenant__pk__in=ids,
-                    tenant__is_active=True,
-                ).exclude(
-                    project_id__in=project_ids_to_exclude,
-                ).exclude(
-                    tenant_id__in=tenant_ids_to_exclude,
-                ).only(
-                    'tenant_id',
-                    'project',
-                )
+                if len(ids) > 0:
+
+                    nested_tenant_objects = ProjectTenant.objects.filter(
+                        project_id=project_id,
+                        project__is_active=True,
+                        tenant__pk__in=ids,
+                        tenant__is_active=True,
+                    ).exclude(
+                        project_id__in=project_ids_to_exclude,
+                    ).exclude(
+                        tenant_id__in=tenant_ids_to_exclude,
+                    ).only(
+                        'tenant_id',
+                        'project',
+                    )
 
                 for object in nested_tenant_objects:
 
@@ -613,9 +591,11 @@ class PermissionSet:
 
         for project_pk in data['projects'].keys():
 
-            project_item_types_queryset = Project.get_project_item_types(
-                project_pk,
+            item_types = ItemType.objects.filter(
                 is_active=True,
+                projects__pk=project_pk
+            ).prefetch_related(
+                'projects'
             ).only(
                 'code'
             ).values_list(
@@ -623,20 +603,7 @@ class PermissionSet:
                 flat=True
             )
 
-            tenants_item_types_queryset = Project.get_tenants_item_types(
-                project_pk,
-                is_active=True,
-            ).only(
-                'code'
-            ).values_list(
-                'code',
-                flat=True
-            )
-
-            data['projects'][project_pk]['item_types'] = {
-                'tenants': list(tenants_item_types_queryset),
-                'project': list(project_item_types_queryset),
-            }
+            data['projects'][project_pk]['item_types'] = list(item_types)
 
         return data
 

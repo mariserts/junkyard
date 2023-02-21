@@ -22,7 +22,7 @@ class UsersViewSet(
 
     filter_backends = (filters.DjangoFilterBackend, )
     filterset_class = UsersFilterSet
-    ordering_fields = ('email', )
+    ordering_fields = ['id', 'email', ]
     pagination_class = JunkyardApiPagination
     permission_classes = (permissions.IsAuthenticated, )
     queryset = User.objects.all()

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from typing import Type
 
-from django.db.models import Q
 from django.db.models.query import QuerySet
 
 from django_filters import rest_framework as filters
@@ -22,7 +21,7 @@ class ProjectsItemTypesViewSet(
 
     filter_backends = (filters.DjangoFilterBackend, )
     filterset_class = ProjectsItemTypesFilterSet
-    ordering_fields = ('code', )
+    ordering_fields = ['code', ]
     pagination_class = JunkyardApiPagination
     permission_classes = (permissions.IsAuthenticated, )
     queryset = ItemType.objects.all()
@@ -37,12 +36,11 @@ class ProjectsItemTypesViewSet(
 
         project_pk = self.kwargs['project_pk']
 
-        condition = Q()
-        condition.add(Q(for_tenants__pk=project_pk), Q.OR)
-        condition.add(Q(for_projects__pk=project_pk), Q.OR)
-
         return ItemType.objects.filter(
-            condition
+            is_active=True,
+            projects__pk=project_pk
+        ).prefetch_related(
+            'projects',
         ).order_by(
             *self.ordering_fields
         )

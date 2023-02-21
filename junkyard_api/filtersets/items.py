@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 from typing import Union
 
+from django.db.models import Q
 from django.db.models.query import QuerySet
 
-from django_filters import FilterSet, NumberFilter
+from django_filters import BooleanFilter, FilterSet, IsoDateTimeFilter
 
 from ..conf import settings
-from ..models import Item, User
+from ..models import Item
 
 from .filters import EmptyMultipleChoiceFilter
 
@@ -19,19 +20,35 @@ class ItemsFilterSet(FilterSet):
             'item_type',
         ]
 
+    active_before = IsoDateTimeFilter(method='filter_by_active_before')
+    is_active = BooleanFilter(method='filter_by_is_active')
     item_type = EmptyMultipleChoiceFilter(method='filter_by_item_type')
-    for_user = NumberFilter(method='filter_by_for_user')
 
-    def filter_by_for_user(
+    def filter_by_active_before(
         self,
         queryset: QuerySet,
         name: str,
-        value: Union[str, None]
+        value: bool
+    ) -> QuerySet:
+
+        condition = Q()
+        condition.add(Q(data__active_from__lte=str(value)), Q.OR)
+        condition.add(Q(data__active_from__isnull=True), Q.OR)
+
+        queryset = queryset.filter(condition)
+
+        return queryset.distinct()
+
+    def filter_by_is_active(
+        self,
+        queryset: QuerySet,
+        name: str,
+        value: bool
     ) -> QuerySet:
 
         queryset = queryset.filter(
-            tenant_id__in=User.get_tenants(value, format='ids')
-        ).distinct()
+            data__is_active=True
+        )
 
         return queryset
 
@@ -42,22 +59,23 @@ class ItemsFilterSet(FilterSet):
         value: Union[str, None]
     ) -> QuerySet:
 
-        # url/?item_type=1&item_type=2
-        # https://www.rfc-editor.org/rfc/rfc3986
-
-        allowed_types = settings.ITEM_TYPE_REGISTRY.get_types(format='names')
+        allowed_types = settings.ITEM_TYPE_REGISTRY.get_types(format='codes')
 
         item_types = list(set(allowed_types).intersection(set(value)))
 
         count = len(item_types)
 
         if count == 0:
-            queryset = queryset.filter(item_type='--1')
+            queryset = queryset.filter(item_type__code='--1')
 
         elif count == 1:
-            queryset = queryset.filter(item_type=item_types[0])
+            queryset = queryset.filter(item_type__code=item_types[0])
 
         else:
-            queryset = queryset.filter(item_type__in=item_types)
+            queryset = queryset.filter(item_type__code__in=item_types)
+
+        queryset = queryset.select_related(
+            'item_type'
+        )
 
         return queryset.distinct()

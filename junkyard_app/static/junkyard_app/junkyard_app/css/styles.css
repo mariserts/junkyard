@@ -16,7 +16,8 @@ a { color: #3F51B5; }
 
 h1.heading-h1 { font-weight: bold; font-size: 32px; margin: 20px 0px 30px 0px; padding: 0px 0px; }
 
-.results h2.results-total { font-weight: bold; font-size: 24px; margin: 0px 0px 30px 0px; padding: 0px 0px; }
+.results h2.results-total { color: #222222; font-weight: bold; font-size: 24px; margin: 0px 0px 30px 0px; padding: 0px 0px; }
+.results h2.results-total small { color: #222222; }
 .results ul.results-list { list-style: none; margin: 0px 0px 30px 0px; padding: 0px 0px;}
 .results ul.results-list li { border-bottom: 1px solid #BBBBBB; padding: 15px 0px; }
 .results ul.results-list li:last-child { border-bottom-width: 0px; }

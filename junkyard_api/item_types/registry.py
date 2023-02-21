@@ -66,6 +66,10 @@ class ItemTypeRegistry:
 
     def get_types(
         self: Type,
+        format: str = 'types'
     ) -> List[RegistryEntry]:
+
+        if format == 'codes':
+            return list(self.types.keys())
 
         return self.types

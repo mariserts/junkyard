@@ -47,7 +47,7 @@ class ProjectsTenantsUsersViewSet(
 
     filter_backends = (filters.DjangoFilterBackend, )
     filterset_class = ProjectsTenantsUsersFilterSet
-    ordering_fields = ('id', )
+    ordering_fields = ['email', ]
     pagination_class = JunkyardApiPagination
     permission_classes = (
         permissions.IsAuthenticated,

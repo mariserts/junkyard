@@ -12,7 +12,7 @@ from django_filters import rest_framework as filters
 from ..filtersets.items import ItemsFilterSet
 from ..models import Item
 from ..pagination import JunkyardApiPagination
-from ..serializers.items import ItemSerializer
+from ..serializers.projects_tenants_items import ProjectsTenantsItemsSerializer
 
 
 class ProjectsTenantsItemsViewSetPermission(permissions.BasePermission):
@@ -28,9 +28,10 @@ class ProjectsTenantsItemsViewSetPermission(permissions.BasePermission):
             tenant_pk = view.kwargs['tenant_pk']
             project_pk = view.kwargs['project_pk']
 
-            pset = request.user.permission_set
-
-            return pset.is_project_tenant_user(project_pk, tenant_pk)
+            return request.user.permission_set.is_project_tenant_user(
+                project_pk,
+                tenant_pk
+            )
 
         return True
 
@@ -46,14 +47,14 @@ class ProjectsTenantsItemsViewSet(
 
     filter_backends = (filters.DjangoFilterBackend, )
     filterset_class = ItemsFilterSet
-    ordering_fields = ('id', )
+    ordering_fields = ['-created_at', ]
     pagination_class = JunkyardApiPagination
     permission_classes = (
         permissions.IsAuthenticated,
         ProjectsTenantsItemsViewSetPermission,
     )
     queryset = Item.objects.all()
-    serializer_class = ItemSerializer
+    serializer_class = ProjectsTenantsItemsSerializer
     swagger_schema = None
 
     def get_queryset(
@@ -82,10 +83,6 @@ class ProjectsTenantsItemsViewSet(
 
         if pset.is_project_tenant_user(project_pk, tenant_pk) is True:
             return queryset
-
-        queryset = queryset.filter(
-            is_active=True,
-        )
 
         return queryset
 

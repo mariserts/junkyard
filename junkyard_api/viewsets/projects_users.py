@@ -40,7 +40,7 @@ class ProjectsUsersViewSet(
 
     filter_backends = (filters.DjangoFilterBackend, )
     filterset_class = ProjectsUsersFilterSet
-    ordering_fields = ('id', )
+    ordering_fields = ['id', 'email', ]
     pagination_class = JunkyardApiPagination
     permission_classes = (
         permissions.IsAuthenticated,

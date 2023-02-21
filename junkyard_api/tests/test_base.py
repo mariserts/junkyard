@@ -26,8 +26,11 @@ class BaseTestCase(
         )
 
         self.item_type_flat_page = ItemType.objects.get(
-            code=FlatPageRegistryEntry.code)
-        self.item_type_news = ItemType.objects.get(code=NewsRegistryEntry.code)
+            code=FlatPageRegistryEntry.code
+        )
+        self.item_type_news = ItemType.objects.get(
+            code=NewsRegistryEntry.code
+        )
 
         #
         self.user_one_email = 'user_one@test.case'
@@ -105,9 +108,8 @@ class BaseTestCase(
             name='three'
         )
 
-        self.project_one.item_types_for_tenants.add(self.item_type_news)
-        self.project_one.item_types_for_project.add(self.item_type_flat_page)
-        self.project_one.item_types_for_project.add(self.item_type_news)
+        self.project_one.item_types.add(self.item_type_news)
+        self.project_one.item_types.add(self.item_type_flat_page)
         self.project_one.save()
 
     def authenticate_with_token(

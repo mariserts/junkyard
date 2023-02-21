@@ -26,8 +26,6 @@ class BaseItemSerializer(BaseSerializer):
 
     parent_items = CrudItemRelationSerializer(many=True, required=False)
 
-    is_active = serializers.BooleanField(default=False)
-
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
 
@@ -61,7 +59,6 @@ class ItemSerializer(BaseModelSerializer):
     moved_to_id = serializers.IntegerField(required=False, allow_null=True)
 
     created_at = serializers.DateTimeField(read_only=True)
-    is_active = serializers.BooleanField(default=False)
 
     def to_representation(
         self: Type,

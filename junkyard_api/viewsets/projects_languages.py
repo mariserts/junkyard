@@ -15,7 +15,6 @@ class ProjectsLanguagesViewSet(
 
     filter_backends = (filters.DjangoFilterBackend, )
     filterset_class = LanguagesFilterSet
-    # ordering_fields = ('name', )
     permission_classes = (permissions.IsAuthenticated, )
     queryset = QuerySet()
     serializer_class = LanguageSerializer

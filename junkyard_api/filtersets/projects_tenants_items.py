@@ -2,5 +2,5 @@
 from .items import ItemsFilterSet
 
 
-class ProjectsItemsFilterSet(ItemsFilterSet):
+class ProjectsTenantsItemsFilterSet(ItemsFilterSet):
     pass
