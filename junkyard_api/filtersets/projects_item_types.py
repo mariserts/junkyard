@@ -1,14 +1,6 @@
 # -*- coding: utf-8 -*-
-from django_filters import FilterSet
-
-from ..models import ItemType
+from .item_types import ItemTypesFilterSet
 
 
-class ProjectsItemTypesFilterSet(FilterSet):
-
-    class Meta:
-        model = ItemType
-        fields = [
-            'code',
-            'is_active',
-        ]
+class ProjectsItemTypesFilterSet(ItemTypesFilterSet):
+    pass

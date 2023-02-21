@@ -22,10 +22,6 @@ class Settings:
         return 'authenticate'
 
     @property
-    def BASENAME_CRYPTOGRAPHY(self):
-        return 'cryptography'
-
-    @property
     def BASENAME_PROJECTS_ITEM_TYPES(self):
         return 'projects-item-types'
 

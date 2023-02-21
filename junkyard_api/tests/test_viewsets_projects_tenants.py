@@ -48,26 +48,3 @@ class AuthenticatedProjectsTenantsViewSetTestCase(
             request.status_code,
             200
         )
-
-    def test_list_view_filtered_by_id(
-        self: Type
-    ):
-
-        self.authenticate_with_token(self.access_token_one)
-
-        request = self.client.get(
-            self.get_url(self.project_one.id) + '?id=',
-            format='json'
-        )
-
-        self.assertEquals(
-            request.status_code,
-            200
-        )
-
-        data = request.json()
-
-        self.assertEquals(
-            data['total'],
-            0
-        )

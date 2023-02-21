@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from typing import Type
 
+from django.db.models import Q
 from django.db.models.query import QuerySet
 
 from django_filters import rest_framework as filters
@@ -34,13 +35,25 @@ class ProjectsItemTypesViewSet(
         if self.request.user.is_authenticated is False:
             return ItemType.objects.none()
 
+        queryset = self.queryset.filter(
+            is_active=True
+        )
+
         project_pk = self.kwargs['project_pk']
 
-        return ItemType.objects.filter(
-            is_active=True,
-            projects__pk=project_pk
+        condition = Q()
+        condition.add(Q(for_tenants__pk=project_pk), Q.OR)
+
+        if self.request.user.permission_set.is_project_user(
+            project_pk
+        ) is True:
+            condition.add(Q(for_projects__pk=project_pk), Q.OR)
+
+        queryset = queryset.filter(
+            condition
         ).prefetch_related(
-            'projects',
+            'for_tenants',
+            'for_projects',
         ).order_by(
             *self.ordering_fields
         )

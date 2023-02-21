@@ -12,7 +12,5 @@ class JunkyardApiConfig(AppConfig):
         from django.conf import settings as dj_settings
 
         from .item_types.registry import ItemTypeRegistry
-        from .languages.registry import LanguageRegistry
 
         dj_settings._JUNKYARD_API_ITEM_TYPE_REGISTRY = ItemTypeRegistry()
-        dj_settings._JUNKYARD_API_LANGUAGES_REGISTRY = LanguageRegistry()

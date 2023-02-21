@@ -11,9 +11,6 @@ from drf_yasg import openapi
 from .conf import settings
 
 from .viewsets.authenticate import AuthenticationViewSet
-from .viewsets.item_types import ItemTypesViewSet
-from .viewsets.languages import LanguagesViewSet
-from .viewsets.projects_languages import ProjectsLanguagesViewSet
 from .viewsets.projects_item_types import ProjectsItemTypesViewSet
 from .viewsets.projects_items import ProjectsItemsViewSet
 from .viewsets.projects_tenants_items import ProjectsTenantsItemsViewSet
@@ -21,7 +18,6 @@ from .viewsets.projects_tenants_users import ProjectsTenantsUsersViewSet
 from .viewsets.projects_tenants import ProjectsTenantsViewSet
 from .viewsets.projects_users import ProjectsUsersViewSet
 from .viewsets.projects import ProjectsViewSet
-from .viewsets.cryptography import CryptographyViewSet
 from .viewsets.users import UsersViewSet
 
 
@@ -48,9 +44,6 @@ router = routers.SimpleRouter()
 # Base urls
 # /api/
 router.register(settings.PATH_AUTHENTICATE, AuthenticationViewSet,basename=settings.BASENAME_AUTHENTICATE)
-router.register(r'cryptography', CryptographyViewSet, basename=settings.BASENAME_CRYPTOGRAPHY)
-router.register(r'item-types', ItemTypesViewSet, basename='item-types')
-router.register(r'languages', LanguagesViewSet, basename='languages')
 router.register(r'projects', ProjectsViewSet, basename='projects')
 router.register(r'users', UsersViewSet, basename='users')
 
@@ -58,7 +51,6 @@ router.register(r'users', UsersViewSet, basename='users')
 projects_router = routers.NestedSimpleRouter(router, r'projects', lookup='project')
 projects_router.register(r'item-types', ProjectsItemTypesViewSet, basename=settings.BASENAME_PROJECTS_ITEM_TYPES)
 projects_router.register(r'items', ProjectsItemsViewSet, basename=settings.BASENAME_PROJECTS_ITEMS)
-projects_router.register(r'languages', ProjectsLanguagesViewSet, basename='languages')
 projects_router.register(r'tenants', ProjectsTenantsViewSet, basename='tenants')
 projects_router.register(r'users', ProjectsUsersViewSet, basename='users')
 

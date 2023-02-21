@@ -82,9 +82,14 @@ class Project(models.Model):
     description = models.CharField(max_length=4096, blank=True, null=True)
     name = models.CharField(max_length=255, blank=True, null=True)
 
-    item_types = models.ManyToManyField(
+    project_item_types = models.ManyToManyField(
         ItemType,
-        related_name='projects',
+        related_name='for_projects',
+        blank=True
+    )
+    tenant_item_types = models.ManyToManyField(
+        ItemType,
+        related_name='for_tenants',
         blank=True
     )
 
@@ -429,7 +434,28 @@ class PermissionSet:
         project_pk: str,
     ) -> List[str]:
 
-        codes = self.pset.get(
+        if int(project_pk) not in self.get_projects():
+            return []
+
+        if self.is_project_user(project_pk) is False:
+
+            codes = self.pset.get(
+                'projects',
+                {}
+            ).get(
+                str(project_pk),
+                {}
+            ).get(
+                'item_types',
+                {}
+            ).get(
+                'tenant',
+                []
+            )
+
+            return list(set(codes))
+
+        project_codes = self.pset.get(
             'projects',
             {}
         ).get(
@@ -437,10 +463,13 @@ class PermissionSet:
             {}
         ).get(
             'item_types',
+            {}
+        ).get(
+            'project',
             []
         )
 
-        return list(set(codes))
+        return list(set(codes + project_codes))
 
     def has_access_to_project_item_type(
         self: Type,
@@ -591,11 +620,11 @@ class PermissionSet:
 
         for project_pk in data['projects'].keys():
 
-            item_types = ItemType.objects.filter(
+            tenant_item_types = ItemType.objects.filter(
                 is_active=True,
-                projects__pk=project_pk
+                for_tenants__pk=project_pk
             ).prefetch_related(
-                'projects'
+                'for_tenants'
             ).only(
                 'code'
             ).values_list(
@@ -603,7 +632,22 @@ class PermissionSet:
                 flat=True
             )
 
-            data['projects'][project_pk]['item_types'] = list(item_types)
+            project_item_types = ItemType.objects.filter(
+                is_active=True,
+                for_projects__pk=project_pk
+            ).prefetch_related(
+                'for_projects'
+            ).only(
+                'code'
+            ).values_list(
+                'code',
+                flat=True
+            )
+
+            data['projects'][project_pk]['item_types'] = {
+                'tenant': list(tenant_item_types),
+                'project': list(project_item_types)
+            }
 
         return data
 

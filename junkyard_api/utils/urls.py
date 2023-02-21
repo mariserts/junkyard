@@ -5,22 +5,6 @@ from rest_framework.reverse import reverse
 from ..conf import settings
 
 
-def get_cryptography_url(
-    request: Type,
-    sign: bool = True
-) -> str:
-
-    url_part = 'sign'
-    if sign is False:
-        url_part = 'unsign'
-
-    return reverse(
-        f'{settings.BASENAME_CRYPTOGRAPHY}-{url_part}',
-        args=[],
-        request=request,
-    )
-
-
 def get_projects_item_types_url(
     request: Type,
     project_pk: Union[int, str],
